@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { spacing, borderRadius, typography, withAlpha } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Submission, User, Pact } from '@/data/types';
 import Avatar from '@/components/ui/Avatar';
 
 interface ActivityWidgetProps {
   submission: Submission & { user: User; pact: Pact };
+  onPress?: () => void;
 }
 
 function timeAgo(timestamp: string): string {
@@ -18,30 +20,32 @@ function timeAgo(timestamp: string): string {
   return `${days}d ago`;
 }
 
-export default function ActivityWidget({ submission }: ActivityWidgetProps) {
+export default function ActivityWidget({ submission, onPress }: ActivityWidgetProps) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.card}>
+    <Pressable onPress={onPress} style={[styles.card, { backgroundColor: colors.backgroundSecondary }]}>
       <Image source={{ uri: submission.photoUri }} style={styles.photo} />
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        colors={['transparent', colors.overlayHeavy]}
         style={styles.gradient}
       >
         <View style={styles.overlay}>
           <View style={styles.userRow}>
             <Avatar uri={submission.user.avatar} name={submission.user.name} size={24} />
             <View style={styles.textCol}>
-              <Text style={styles.userName} numberOfLines={1}>
+              <Text style={[styles.userName, { color: colors.overlayTextPrimary }]} numberOfLines={1}>
                 {submission.user.name}
               </Text>
-              <Text style={styles.pactName} numberOfLines={1}>
+              <Text style={[styles.pactName, { color: colors.overlayTextSecondary }]} numberOfLines={1}>
                 {submission.pact.title}
               </Text>
             </View>
           </View>
-          <Text style={styles.time}>{timeAgo(submission.timestamp)}</Text>
+          <Text style={[styles.time, { color: colors.overlayTextTertiary }]}>{timeAgo(submission.timestamp)}</Text>
         </View>
       </LinearGradient>
-    </View>
+    </Pressable>
   );
 }
 
@@ -52,7 +56,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     overflow: 'hidden',
     marginRight: spacing.md,
-    backgroundColor: colors.backgroundSecondary,
   },
   photo: {
     width: '100%',
@@ -82,16 +85,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    ...typography.caption,
-    color: colors.textPrimary,
-    fontWeight: '600',
+    ...typography.captionBold,
   },
   pactName: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.7)',
+    ...typography.micro,
   },
   time: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.6)',
+    ...typography.micro,
   },
 });

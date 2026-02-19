@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Image, Text, StyleSheet } from 'react-native';
-import { colors } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { avatarColors, withAlpha, typography } from '@/constants/theme';
 
 interface AvatarProps {
   uri?: string;
@@ -8,8 +9,6 @@ interface AvatarProps {
   size?: number;
   showBorder?: boolean;
 }
-
-const PASTEL_COLORS = ['#7C5CFC', '#FF6B6B', '#4ECDC4', '#FFE66D', '#F38181', '#95E1D3'];
 
 function getInitials(name: string): string {
   return name
@@ -21,8 +20,11 @@ function getInitials(name: string): string {
 }
 
 export default function Avatar({ uri, name = '', size = 40, showBorder }: AvatarProps) {
+  const { colors } = useTheme();
   const [failed, setFailed] = useState(false);
-  const bgColor = PASTEL_COLORS[name.length % PASTEL_COLORS.length];
+  const colorIndex = name.length % avatarColors.palette.length;
+  const bgColor = avatarColors.palette[colorIndex];
+  const textColor = avatarColors.textPalette[colorIndex];
 
   if (!uri || failed) {
     return (
@@ -33,12 +35,12 @@ export default function Avatar({ uri, name = '', size = 40, showBorder }: Avatar
             width: size,
             height: size,
             borderRadius: size / 2,
-            backgroundColor: bgColor + '30',
+            backgroundColor: withAlpha(bgColor, 0.19),
           },
           showBorder && { borderWidth: 2, borderColor: bgColor },
         ]}
       >
-        <Text style={[styles.initials, { fontSize: size * 0.38, color: bgColor }]}>
+        <Text style={[styles.initials, { fontSize: size * 0.38, color: textColor }]}>
           {getInitials(name)}
         </Text>
       </View>
@@ -67,6 +69,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   initials: {
-    fontWeight: '700',
+    fontWeight: typography.h1.fontWeight,
   },
 });

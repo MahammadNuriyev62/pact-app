@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { spacing, borderRadius, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ButtonProps {
   title: string;
@@ -20,6 +21,7 @@ export default function Button({
   fullWidth = false,
   icon,
 }: ButtonProps) {
+  const { colors } = useTheme();
   const isPrimary = variant === 'primary';
   const isSecondary = variant === 'secondary';
 
@@ -29,9 +31,9 @@ export default function Button({
       disabled={disabled}
       style={({ pressed }) => [
         styles.base,
-        isPrimary && styles.primary,
-        isSecondary && styles.secondary,
-        variant === 'ghost' && styles.ghost,
+        isPrimary && { backgroundColor: colors.primary },
+        isSecondary && { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary },
+        variant === 'ghost' && { backgroundColor: 'transparent' },
         fullWidth && styles.fullWidth,
         disabled && styles.disabled,
         pressed && { opacity: 0.8 },
@@ -42,16 +44,16 @@ export default function Button({
           <Ionicons
             name={icon}
             size={18}
-            color={isPrimary ? colors.textPrimary : colors.primary}
+            color={isPrimary ? colors.onPrimary : colors.primary}
             style={{ marginRight: spacing.sm }}
           />
         )}
         <Text
           style={[
             styles.text,
-            isPrimary && styles.primaryText,
-            isSecondary && styles.secondaryText,
-            variant === 'ghost' && styles.ghostText,
+            isPrimary && { color: colors.onPrimary },
+            isSecondary && { color: colors.primary },
+            variant === 'ghost' && { color: colors.primary },
           ]}
         >
           {title}
@@ -63,7 +65,7 @@ export default function Button({
 
 const styles = StyleSheet.create({
   base: {
-    paddingVertical: spacing.md + 2,
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.xl,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
@@ -74,17 +76,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primary: {
-    backgroundColor: colors.primary,
-  },
-  secondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
   fullWidth: {
     width: '100%',
   },
@@ -93,14 +84,5 @@ const styles = StyleSheet.create({
   },
   text: {
     ...typography.bodyBold,
-  },
-  primaryText: {
-    color: colors.textPrimary,
-  },
-  secondaryText: {
-    color: colors.primary,
-  },
-  ghostText: {
-    color: colors.primary,
   },
 });

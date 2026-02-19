@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface CalendarGridProps {
   completedDates: string[];
@@ -10,6 +11,7 @@ interface CalendarGridProps {
 const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function CalendarGrid({ completedDates, color }: CalendarGridProps) {
+  const { colors } = useTheme();
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
@@ -40,12 +42,12 @@ export default function CalendarGrid({ completedDates, color }: CalendarGridProp
 
   return (
     <View>
-      <Text style={styles.monthTitle}>{monthName}</Text>
+      <Text style={[styles.monthTitle, { color: colors.textSecondary }]}>{monthName}</Text>
 
       <View style={styles.headerRow}>
         {DAYS.map((d, i) => (
           <View key={i} style={styles.cell}>
-            <Text style={styles.dayLabel}>{d}</Text>
+            <Text style={[styles.dayLabel, { color: colors.textTertiary }]}>{d}</Text>
           </View>
         ))}
       </View>
@@ -67,7 +69,7 @@ export default function CalendarGrid({ completedDates, color }: CalendarGridProp
                   style={[
                     styles.dot,
                     isCompleted && { backgroundColor: color },
-                    !isCompleted && styles.dotEmpty,
+                    !isCompleted && { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
                     isToday && { borderWidth: 2, borderColor: colors.primary },
                   ]}
                 >
@@ -95,7 +97,6 @@ const DOT_SIZE = 32;
 const styles = StyleSheet.create({
   monthTitle: {
     ...typography.caption,
-    color: colors.textSecondary,
     marginBottom: spacing.md,
     textAlign: 'center',
   },
@@ -115,7 +116,6 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     ...typography.tiny,
-    color: colors.textTertiary,
   },
   dot: {
     width: DOT_SIZE,
@@ -124,13 +124,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dotEmpty: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
   dateText: {
-    fontSize: 11,
-    fontWeight: '600',
+    ...typography.tiny,
   },
 });

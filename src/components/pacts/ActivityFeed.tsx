@@ -1,21 +1,35 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@/constants/theme';
+import { useRouter } from 'expo-router';
+import { spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getRecentActivity } from '@/data/mock';
 import ActivityWidget from './ActivityWidget';
+import EmptyState from '@/components/shared/EmptyState';
 
 export default function ActivityFeed() {
+  const { colors } = useTheme();
+  const router = useRouter();
   const activity = getRecentActivity();
+
+  if (activity.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>Recent Activity</Text>
+        <EmptyState icon="images-outline" title="No activity yet" subtitle="Photos will appear here when friends verify" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Recent Activity</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>Recent Activity</Text>
       <FlatList
         data={activity}
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ActivityWidget submission={item} />}
+        renderItem={({ item }) => <ActivityWidget submission={item} onPress={() => router.push(`/pact/${item.pactId}`)} />}
         contentContainerStyle={styles.list}
       />
     </View>
@@ -28,7 +42,6 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h3,
-    color: colors.textPrimary,
     marginBottom: spacing.md,
   },
   list: {

@@ -1,13 +1,15 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { spacing, typography, borderRadius, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Pact } from '@/data/types';
 import { getStreakForUserPact } from '@/data/mock';
 import Button from '@/components/ui/Button';
 import PactMatchCard from './PactMatchCard';
 
 function ConfettiParticle({ index }: { index: number }) {
+  const { colors } = useTheme();
   const confettiColors = [colors.primary, colors.success, colors.accent1, colors.accent2, colors.accent3, colors.streakGold];
   const color = confettiColors[index % confettiColors.length];
 
@@ -61,6 +63,7 @@ interface VerificationResultProps {
 }
 
 export default function VerificationResult({ matched, pact, onSend, onRetry }: VerificationResultProps) {
+  const { colors } = useTheme();
   const streak = pact ? getStreakForUserPact(pact.id, 'u1') : undefined;
   const iconScale = useRef(new Animated.Value(0)).current;
   const titleOpacity = useRef(new Animated.Value(0)).current;
@@ -76,21 +79,21 @@ export default function VerificationResult({ matched, pact, onSend, onRetry }: V
 
   if (matched && pact) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.confettiContainer}>
           {Array.from({ length: 20 }).map((_, i) => (
             <ConfettiParticle key={i} index={i} />
           ))}
         </View>
 
-        <Animated.View style={[styles.iconCircle, { transform: [{ scale: iconScale }] }]}>
-          <Ionicons name="checkmark" size={48} color={colors.textPrimary} />
+        <Animated.View style={[styles.iconCircle, { backgroundColor: colors.success, shadowColor: colors.success, transform: [{ scale: iconScale }] }]}>
+          <Ionicons name="checkmark" size={48} color={colors.onPrimary} />
         </Animated.View>
 
-        <Animated.Text style={[styles.title, { opacity: titleOpacity }]}>
+        <Animated.Text style={[styles.title, { opacity: titleOpacity, color: colors.textPrimary }]}>
           Pact Verified!
         </Animated.Text>
-        <Animated.Text style={[styles.subtitle, { opacity: titleOpacity }]}>
+        <Animated.Text style={[styles.subtitle, { opacity: titleOpacity, color: colors.textSecondary }]}>
           Your streak continues!
         </Animated.Text>
 
@@ -106,15 +109,15 @@ export default function VerificationResult({ matched, pact, onSend, onRetry }: V
   }
 
   return (
-    <View style={styles.container}>
-      <Animated.View style={[styles.iconCircle, styles.errorCircle, { transform: [{ scale: iconScale }] }]}>
-        <Ionicons name="close" size={48} color={colors.textPrimary} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Animated.View style={[styles.iconCircle, { backgroundColor: colors.error, shadowColor: colors.error, transform: [{ scale: iconScale }] }]}>
+        <Ionicons name="close" size={48} color={colors.onPrimary} />
       </Animated.View>
 
-      <Animated.Text style={[styles.title, { opacity: titleOpacity }]}>
+      <Animated.Text style={[styles.title, { opacity: titleOpacity, color: colors.textPrimary }]}>
         No Match Found
       </Animated.Text>
-      <Animated.Text style={[styles.subtitle, { opacity: titleOpacity }]}>
+      <Animated.Text style={[styles.subtitle, { opacity: titleOpacity, color: colors.textSecondary }]}>
         We couldn't match this to any of your pacts
       </Animated.Text>
 
@@ -131,7 +134,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xxxl,
-    backgroundColor: colors.background,
   },
   confettiContainer: {
     position: 'absolute',
@@ -145,29 +147,18 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 88,
     height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.success,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.success,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  errorCircle: {
-    backgroundColor: colors.error,
-    shadowColor: colors.error,
+    ...shadows.glow,
   },
   title: {
     ...typography.h1,
-    color: colors.textPrimary,
     marginTop: spacing.xxl,
     textAlign: 'center',
   },
   subtitle: {
     ...typography.body,
-    color: colors.textSecondary,
     marginTop: spacing.sm,
     textAlign: 'center',
   },

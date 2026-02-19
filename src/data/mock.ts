@@ -76,6 +76,8 @@ export const pacts: Pact[] = [
   },
 ];
 
+const today = new Date().toISOString().split('T')[0];
+
 function generateDates(daysBack: number, skipRandom = false): string[] {
   const dates: string[] = [];
   const today = new Date();
@@ -89,6 +91,14 @@ function generateDates(daysBack: number, skipRandom = false): string[] {
 }
 
 export const submissions: Submission[] = [
+  // Today's submissions (dynamic)
+  { id: 's19', pactId: 'p1', userId: 'u1', photoUri: 'https://picsum.photos/seed/run6/400/400', timestamp: `${today}T07:15:00Z`, verified: true },
+  { id: 's20', pactId: 'p1', userId: 'u2', photoUri: 'https://picsum.photos/seed/run7/400/400', timestamp: `${today}T06:30:00Z`, verified: true },
+  { id: 's21', pactId: 'p2', userId: 'u1', photoUri: 'https://picsum.photos/seed/book5/400/400', timestamp: `${today}T08:00:00Z`, verified: true },
+  { id: 's22', pactId: 'p4', userId: 'u6', photoUri: 'https://picsum.photos/seed/med5/400/400', timestamp: `${today}T06:45:00Z`, verified: true },
+  { id: 's23', pactId: 'p4', userId: 'u1', photoUri: 'https://picsum.photos/seed/med6/400/400', timestamp: `${today}T07:00:00Z`, verified: true },
+  { id: 's24', pactId: 'p5', userId: 'u1', photoUri: 'https://picsum.photos/seed/phone3/400/400', timestamp: `${today}T08:55:00Z`, verified: true },
+  // Yesterday
   { id: 's1', pactId: 'p1', userId: 'u2', photoUri: 'https://picsum.photos/seed/run1/400/400', timestamp: '2026-02-18T07:30:00Z', verified: true },
   { id: 's2', pactId: 'p1', userId: 'u3', photoUri: 'https://picsum.photos/seed/run2/400/400', timestamp: '2026-02-18T06:45:00Z', verified: true },
   { id: 's3', pactId: 'p2', userId: 'u4', photoUri: 'https://picsum.photos/seed/book1/400/400', timestamp: '2026-02-18T08:00:00Z', verified: true },
@@ -152,6 +162,33 @@ export function getStreakForUserPact(pactId: string, userId: string): StreakData
 
 export function getParticipants(pact: Pact): User[] {
   return pact.participants.map(id => getUserById(id)).filter(Boolean) as User[];
+}
+
+export function getPendingParticipants(pact: Pact): User[] {
+  const today = new Date().toISOString().split('T')[0];
+  const todaySubmissions = submissions.filter(
+    (s) => s.pactId === pact.id && s.timestamp.split('T')[0] === today
+  );
+  const submittedUserIds = new Set(todaySubmissions.map((s) => s.userId));
+  return pact.participants
+    .filter((id) => !submittedUserIds.has(id) && id !== 'u1')
+    .map((id) => getUserById(id))
+    .filter(Boolean) as User[];
+}
+
+export function getCompletionRate(pactId: string, userId: string): number {
+  const pact = getPactById(pactId);
+  if (!pact) return 0;
+  const streak = getStreakForUserPact(pactId, userId);
+  if (!streak) return 0;
+  const daysInWindow = pact.frequency === 'daily' ? 7 : 7;
+  const target = pact.frequency === 'daily' ? daysInWindow : (pact.timesPerWeek || 3);
+  const recentDates = streak.completedDates.slice(-daysInWindow);
+  return Math.min(1, recentDates.length / target);
+}
+
+export function getUnreadNotificationCount(): number {
+  return notifications.filter(n => !n.read).length;
 }
 
 export function getRecentActivity(): (Submission & { user: User; pact: Pact })[] {

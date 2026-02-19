@@ -1,66 +1,54 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { colors } from '@/constants/theme';
+import { View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ProgressRingProps {
   progress: number;
   size?: number;
   strokeWidth?: number;
   color?: string;
+  children?: React.ReactNode;
 }
 
 export default function ProgressRing({
   progress,
   size = 48,
   strokeWidth = 4,
-  color = colors.primary,
+  color,
+  children,
 }: ProgressRingProps) {
-  const clampedProgress = Math.min(1, Math.max(0, progress));
-  const innerSize = size - strokeWidth * 2;
+  const { colors } = useTheme();
+  const ringColor = color ?? colors.primary;
+  const clamped = Math.min(1, Math.max(0, progress));
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference * (1 - clamped);
 
   return (
-    <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
-      <View
-        style={[
-          styles.track,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderWidth: strokeWidth,
-            borderColor: colors.border,
-          },
-        ]}
-      />
-      <View
-        style={[
-          styles.progress,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderWidth: strokeWidth,
-            borderColor: color,
-            borderTopColor: clampedProgress > 0.25 ? color : 'transparent',
-            borderRightColor: clampedProgress > 0.5 ? color : 'transparent',
-            borderBottomColor: clampedProgress > 0.75 ? color : 'transparent',
-            borderLeftColor: clampedProgress > 0 ? color : 'transparent',
-            transform: [{ rotate: '-90deg' }],
-          },
-        ]}
-      />
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size} height={size} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={colors.border}
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={ringColor}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={`${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+        />
+      </Svg>
+      {children}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'relative',
-  },
-  track: {
-    position: 'absolute',
-  },
-  progress: {
-    position: 'absolute',
-  },
-});

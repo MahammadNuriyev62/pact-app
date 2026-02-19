@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { spacing, borderRadius, typography, withAlpha, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Pact } from '@/data/types';
 import IconBadge from '@/components/ui/IconBadge';
 
@@ -10,6 +12,7 @@ interface PactMatchCardProps {
 }
 
 export default function PactMatchCard({ pact, streakDays }: PactMatchCardProps) {
+  const { colors } = useTheme();
   const slideY = useRef(new Animated.Value(40)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -21,12 +24,24 @@ export default function PactMatchCard({ pact, streakDays }: PactMatchCardProps) 
   }, []);
 
   return (
-    <Animated.View style={[styles.card, { opacity, transform: [{ translateY: slideY }] }]}>
+    <Animated.View style={[
+      styles.card,
+      {
+        opacity,
+        transform: [{ translateY: slideY }],
+        backgroundColor: colors.backgroundSecondary,
+        borderColor: withAlpha(colors.success, 0.25),
+        shadowColor: colors.success,
+      },
+    ]}>
       <View style={styles.row}>
         <IconBadge icon={pact.icon} color={pact.color} size={48} />
         <View style={styles.info}>
-          <Text style={styles.title}>{pact.title}</Text>
-          <Text style={styles.streak}>Day {streakDays} 🔥</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{pact.title}</Text>
+          <View style={styles.streakRow}>
+            <Text style={[styles.streak, { color: colors.streakFire }]}>Day {streakDays}</Text>
+            <Ionicons name="flame" size={16} color={colors.streakFire} />
+          </View>
         </View>
       </View>
     </Animated.View>
@@ -35,16 +50,10 @@ export default function PactMatchCard({ pact, streakDays }: PactMatchCardProps) 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.backgroundSecondary,
     borderRadius: borderRadius.xl,
     padding: spacing.xl,
     borderWidth: 1.5,
-    borderColor: colors.success + '40',
-    shadowColor: colors.success,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    ...shadows.lg,
   },
   row: {
     flexDirection: 'row',
@@ -56,11 +65,14 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h3,
-    color: colors.textPrimary,
+  },
+  streakRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
   streak: {
     ...typography.bodyBold,
-    color: colors.streakFire,
-    marginTop: spacing.xs,
   },
 });

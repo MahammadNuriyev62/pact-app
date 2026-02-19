@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { spacing, borderRadius, typography, layout } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { users } from '@/data/mock';
-import Avatar from '@/components/ui/Avatar';
 
 const friends = users.filter((u) => !u.isCurrentUser);
+
+const AVATAR_SIZE = 64;
 
 interface FriendSelectorProps {
   selectedIds: string[];
@@ -14,67 +16,93 @@ interface FriendSelectorProps {
 }
 
 export default function FriendSelector({ selectedIds, onToggle }: FriendSelectorProps) {
+  const { colors } = useTheme();
+
   return (
-    <View>
-      {friends.map((user, index) => {
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.scroll}
+    >
+      {/* Invite button */}
+      <Pressable style={styles.item} onPress={() => Alert.alert('Coming Soon', 'Share invite link feature is coming soon!')}>
+        <View style={[styles.inviteCircle, { borderColor: colors.textTertiary }]}>
+          <Ionicons name="add" size={28} color={colors.textTertiary} />
+        </View>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>Invite</Text>
+      </Pressable>
+
+      {/* Friends */}
+      {friends.map((user) => {
         const isSelected = selectedIds.includes(user.id);
+        const firstName = user.name.split(' ')[0];
+
         return (
-          <View key={user.id}>
-            <Pressable
-              style={styles.row}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onToggle(user.id);
-              }}
+          <Pressable
+            key={user.id}
+            style={styles.item}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onToggle(user.id);
+            }}
+          >
+            <View>
+              <Image source={{ uri: user.avatar }} style={[styles.avatar, isSelected && { borderColor: colors.primary, borderWidth: 2 }]} />
+              {isSelected && (
+                <View style={[styles.checkBadge, { backgroundColor: colors.success }]}>
+                  <Ionicons name="checkmark" size={12} color={colors.onSuccess} />
+                </View>
+              )}
+            </View>
+            <Text
+              style={[styles.label, { color: isSelected ? colors.textPrimary : colors.textSecondary }]}
+              numberOfLines={1}
             >
-              <Avatar uri={user.avatar} name={user.name} size={44} />
-              <View style={styles.info}>
-                <Text style={styles.name}>{user.name}</Text>
-                <Text style={styles.username}>@{user.username}</Text>
-              </View>
-              <View style={[styles.check, isSelected && styles.checkSelected]}>
-                {isSelected && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
-              </View>
-            </Pressable>
-          </View>
+              {firstName}
+            </Text>
+          </Pressable>
         );
       })}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
+  scroll: {
+    gap: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  item: {
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    width: AVATAR_SIZE + spacing.md,
   },
-  info: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  name: {
-    ...typography.bodyBold,
-    color: colors.textPrimary,
-  },
-  username: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    marginTop: 2,
-  },
-  check: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  inviteCircle: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     borderWidth: 2,
-    borderColor: colors.border,
+    borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkSelected: {
-    backgroundColor: colors.success,
-    borderColor: colors.success,
+  avatar: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+  },
+  checkBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: {
+    ...typography.caption,
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
 });

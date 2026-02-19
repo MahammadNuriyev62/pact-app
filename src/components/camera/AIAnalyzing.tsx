@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { StyleSheet, View, Image, Text, Animated, Easing } from 'react-native';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography, shadows } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const PHOTO_SIZE = 260;
 
@@ -17,6 +18,7 @@ const STATUS_TEXTS = [
 ];
 
 export default function AIAnalyzing({ photoUri, onComplete }: AIAnalyzingProps) {
+  const { colors } = useTheme();
   const [dotCount, setDotCount] = useState(1);
   const [statusIndex, setStatusIndex] = useState(0);
 
@@ -31,10 +33,8 @@ export default function AIAnalyzing({ photoUri, onComplete }: AIAnalyzingProps) 
   }, [onComplete]);
 
   useEffect(() => {
-    // Fade in overlay
     Animated.timing(overlayOpacity, { toValue: 1, duration: 400, useNativeDriver: true }).start();
 
-    // Scanning line animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(scanLineY, {
@@ -52,7 +52,6 @@ export default function AIAnalyzing({ photoUri, onComplete }: AIAnalyzingProps) 
       ])
     ).start();
 
-    // Pulsing glow
     Animated.loop(
       Animated.sequence([
         Animated.parallel([
@@ -66,17 +65,14 @@ export default function AIAnalyzing({ photoUri, onComplete }: AIAnalyzingProps) 
       ])
     ).start();
 
-    // Animated dots
     const dotsInterval = setInterval(() => {
       setDotCount((prev) => (prev % 3) + 1);
     }, 400);
 
-    // Rotating status text
     const statusInterval = setInterval(() => {
       setStatusIndex((prev) => (prev + 1) % STATUS_TEXTS.length);
     }, 1000);
 
-    // Complete after 3 seconds
     const completeTimeout = setTimeout(triggerComplete, 3000);
 
     return () => {
@@ -87,32 +83,42 @@ export default function AIAnalyzing({ photoUri, onComplete }: AIAnalyzingProps) 
   }, []);
 
   return (
-    <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]}>
+    <Animated.View style={[styles.overlay, { opacity: overlayOpacity, backgroundColor: colors.overlayHeavy }]}>
       <View style={styles.content}>
         <View style={styles.photoContainer}>
-          {/* Glow ring */}
           <Animated.View
             style={[
               styles.glowRing,
-              { transform: [{ scale: glowScale }], opacity: glowOpacity },
+              {
+                transform: [{ scale: glowScale }],
+                opacity: glowOpacity,
+                borderColor: colors.primary,
+                shadowColor: colors.primary,
+              },
             ]}
           />
 
-          {/* Photo with scan line */}
           <View style={styles.photoWrapper}>
             <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
             <View style={styles.scanOverlay}>
               <Animated.View
-                style={[styles.scanLine, { transform: [{ translateY: scanLineY }] }]}
+                style={[
+                  styles.scanLine,
+                  {
+                    transform: [{ translateY: scanLineY }],
+                    backgroundColor: colors.primary,
+                    shadowColor: colors.primary,
+                  },
+                ]}
               />
             </View>
           </View>
         </View>
 
-        <Text style={styles.analyzingText}>
+        <Text style={[styles.analyzingText, { color: colors.overlayTextPrimary }]}>
           Analyzing your photo{'.'.repeat(dotCount)}
         </Text>
-        <Text style={styles.statusText}>{STATUS_TEXTS[statusIndex]}</Text>
+        <Text style={[styles.statusText, { color: colors.overlayTextTertiary }]}>{STATUS_TEXTS[statusIndex]}</Text>
       </View>
     </Animated.View>
   );
@@ -121,7 +127,6 @@ export default function AIAnalyzing({ photoUri, onComplete }: AIAnalyzingProps) 
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10, 10, 15, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -140,12 +145,8 @@ const styles = StyleSheet.create({
     height: PHOTO_SIZE + 24,
     borderRadius: (PHOTO_SIZE + 24) / 2,
     borderWidth: 3,
-    borderColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
+    ...shadows.glow,
     shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 10,
   },
   photoWrapper: {
     width: PHOTO_SIZE,
@@ -168,22 +169,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
+    ...shadows.md,
     shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 5,
   },
   analyzingText: {
     ...typography.h3,
-    color: colors.textPrimary,
     marginTop: spacing.xxxl,
     textAlign: 'center',
   },
   statusText: {
     ...typography.caption,
-    color: colors.textSecondary,
     marginTop: spacing.sm,
     textAlign: 'center',
   },

@@ -3,32 +3,34 @@ import {
   View,
   StyleSheet,
   Text,
-  Image,
   Pressable,
-  Dimensions,
+  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { spacing, borderRadius, typography, layout, withAlpha } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { pacts } from '@/data/mock';
+import IconBadge from '@/components/ui/IconBadge';
 import ShutterButton from '@/components/camera/ShutterButton';
+import PhotoPreview from '@/components/camera/PhotoPreview';
 import AIAnalyzing from '@/components/camera/AIAnalyzing';
 import VerificationResult from '@/components/camera/VerificationResult';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type CameraState = 'ready' | 'preview' | 'analyzing' | 'result';
 
 export default function CameraScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const [state, setState] = useState<CameraState>('ready');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [matched, setMatched] = useState(false);
   const [matchedPactId, setMatchedPactId] = useState<string | undefined>();
+  const [selectedPactId, setSelectedPactId] = useState<string>(pacts[0]?.id || '');
 
   const handleCapture = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -53,7 +55,7 @@ export default function CameraScreen() {
 
   const handleAnalysisComplete = (isMatch: boolean, pactId?: string) => {
     setMatched(isMatch);
-    setMatchedPactId(pactId);
+    setMatchedPactId(isMatch ? selectedPactId : pactId);
     setState('result');
     if (isMatch) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -76,31 +78,52 @@ export default function CameraScreen() {
 
   const matchedPact = matchedPactId ? pacts.find((p) => p.id === matchedPactId) : undefined;
 
-  // Ready state - camera placeholder with shutter
   if (state === 'ready') {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
         <View style={styles.cameraPlaceholder}>
-          <View style={styles.cameraBg}>
+          <View style={[styles.cameraBg, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
             <Ionicons name="camera" size={64} color={colors.textTertiary} />
-            <Text style={styles.cameraHint}>Take a photo to verify your pact</Text>
-            <Text style={styles.cameraSubHint}>
+            <Text style={[styles.cameraHint, { color: colors.textSecondary }]}>Take a photo to verify your pact</Text>
+            <Text style={[styles.cameraSubHint, { color: colors.textTertiary }]}>
               Snap a pic of your activity and we'll match it
             </Text>
           </View>
 
-          {/* Viewfinder corners */}
-          <View style={[styles.corner, styles.cornerTL]} />
-          <View style={[styles.corner, styles.cornerTR]} />
-          <View style={[styles.corner, styles.cornerBL]} />
-          <View style={[styles.corner, styles.cornerBR]} />
+          <View style={[styles.corner, styles.cornerTL, { borderColor: colors.primary }]} />
+          <View style={[styles.corner, styles.cornerTR, { borderColor: colors.primary }]} />
+          <View style={[styles.corner, styles.cornerBL, { borderColor: colors.primary }]} />
+          <View style={[styles.corner, styles.cornerBR, { borderColor: colors.primary }]} />
+        </View>
+
+        {/* Pact Selector */}
+        <View style={styles.pactSelectorContainer}>
+          <Text style={[styles.pactSelectorLabel, { color: colors.textTertiary }]}>Verifying for</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pactSelectorScroll}>
+            {pacts.map((pact) => {
+              const isSelected = pact.id === selectedPactId;
+              return (
+                <Pressable
+                  key={pact.id}
+                  onPress={() => setSelectedPactId(pact.id)}
+                  style={[
+                    styles.pactSelectorItem,
+                    { borderColor: isSelected ? pact.color : colors.border, backgroundColor: isSelected ? withAlpha(pact.color, 0.1) : colors.backgroundSecondary },
+                  ]}
+                >
+                  <IconBadge icon={pact.icon} color={pact.color} size={32} />
+                  <Text style={[styles.pactSelectorTitle, { color: isSelected ? colors.textPrimary : colors.textSecondary }]} numberOfLines={1}>{pact.title}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
 
         <View style={styles.controls}>
           <View style={styles.controlSpacer} />
           <ShutterButton onPress={handleCapture} />
           <View style={styles.controlSpacer}>
-            <Pressable style={styles.iconButton}>
+            <Pressable onPress={handleCapture} style={[styles.iconButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
               <Ionicons name="images-outline" size={24} color={colors.textSecondary} />
             </Pressable>
           </View>
@@ -109,42 +132,25 @@ export default function CameraScreen() {
     );
   }
 
-  // Preview state
   if (state === 'preview' && photoUri) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.previewContainer}>
-          <Image source={{ uri: photoUri }} style={styles.previewImage} />
-
-          <View style={styles.previewActions}>
-            <Pressable style={styles.retakeButton} onPress={resetCamera}>
-              <Ionicons name="refresh" size={20} color={colors.textPrimary} />
-              <Text style={styles.retakeText}>Retake</Text>
-            </Pressable>
-
-            <Pressable style={styles.verifyButton} onPress={handleVerify}>
-              <Ionicons name="sparkles" size={20} color={colors.textPrimary} />
-              <Text style={styles.verifyText}>Verify with AI</Text>
-            </Pressable>
-          </View>
-        </View>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+        <PhotoPreview photoUri={photoUri} onRetake={resetCamera} onVerify={handleVerify} />
       </View>
     );
   }
 
-  // Analyzing state
   if (state === 'analyzing' && photoUri) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <AIAnalyzing photoUri={photoUri} onComplete={handleAnalysisComplete} />
       </View>
     );
   }
 
-  // Result state
   if (state === 'result') {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <VerificationResult
           matched={matched}
           pact={matchedPact}
@@ -161,7 +167,6 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   cameraPlaceholder: {
     flex: 1,
@@ -173,21 +178,17 @@ const styles = StyleSheet.create({
   },
   cameraBg: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: borderRadius.xxl,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   cameraHint: {
     ...typography.h3,
-    color: colors.textSecondary,
     marginTop: spacing.xl,
   },
   cameraSubHint: {
     ...typography.caption,
-    color: colors.textTertiary,
     marginTop: spacing.sm,
     textAlign: 'center',
     paddingHorizontal: spacing.xxxl,
@@ -196,7 +197,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 32,
     height: 32,
-    borderColor: colors.primary,
   },
   cornerTL: {
     top: 16,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: spacing.huge + 60,
+    paddingBottom: layout.tabBarClearance,
     paddingHorizontal: spacing.xxxl,
   },
   controlSpacer: {
@@ -238,60 +238,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.backgroundSecondary,
+    width: layout.iconButtonMd,
+    height: layout.iconButtonMd,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  previewContainer: {
-    flex: 1,
-    padding: spacing.xl,
-    justifyContent: 'center',
+  pactSelectorContainer: {
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.md,
   },
-  previewImage: {
-    width: SCREEN_WIDTH - spacing.xl * 2,
-    height: SCREEN_WIDTH - spacing.xl * 2,
-    borderRadius: borderRadius.xxl,
-    alignSelf: 'center',
+  pactSelectorLabel: {
+    ...typography.caption,
+    marginBottom: spacing.sm,
   },
-  previewActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.xxl,
-    paddingHorizontal: spacing.lg,
+  pactSelectorScroll: {
+    gap: spacing.sm,
   },
-  retakeButton: {
-    flex: 1,
+  pactSelectorItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundTertiary,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
   },
-  retakeText: {
-    ...typography.bodyBold,
-    color: colors.textPrimary,
-  },
-  verifyButton: {
-    flex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary,
-  },
-  verifyText: {
-    ...typography.bodyBold,
-    color: colors.textPrimary,
+  pactSelectorTitle: {
+    ...typography.caption,
+    fontWeight: '600',
+    maxWidth: 80,
   },
 });

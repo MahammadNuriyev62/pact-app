@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface HeaderProps {
   title: string;
@@ -9,11 +10,13 @@ interface HeaderProps {
 }
 
 export default function Header({ title, subtitle, rightAction }: HeaderProps) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.container}>
       <View>
-        <Text style={styles.title}>{title}</Text>
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+        {subtitle && <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>}
       </View>
       {rightAction}
     </View>
@@ -29,11 +32,9 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h1,
-    color: colors.textPrimary,
   },
   subtitle: {
     ...typography.caption,
-    color: colors.textSecondary,
     marginTop: spacing.xs,
   },
 });

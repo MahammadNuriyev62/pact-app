@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { spacing, borderRadius, typography, withAlpha } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ChipProps {
   label: string;
@@ -9,18 +10,21 @@ interface ChipProps {
   color?: string;
 }
 
-export default function Chip({ label, selected, onPress, color = colors.primary }: ChipProps) {
+export default function Chip({ label, selected, onPress, color }: ChipProps) {
+  const { colors } = useTheme();
+  const chipColor = color ?? colors.primary;
+
   return (
     <Pressable
       onPress={onPress}
       style={[
         styles.chip,
         selected
-          ? { backgroundColor: color + '20', borderColor: color }
+          ? { backgroundColor: withAlpha(chipColor, 0.125), borderColor: chipColor }
           : { backgroundColor: 'transparent', borderColor: colors.border },
       ]}
     >
-      <Text style={[styles.text, { color: selected ? color : colors.textTertiary }]}>
+      <Text style={[styles.text, { color: selected ? chipColor : colors.textTertiary }]}>
         {label}
       </Text>
     </Pressable>
@@ -30,12 +34,11 @@ export default function Chip({ label, selected, onPress, color = colors.primary 
 const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
     borderWidth: 1.5,
   },
   text: {
-    ...typography.caption,
-    fontWeight: '600',
+    ...typography.captionBold,
   },
 });

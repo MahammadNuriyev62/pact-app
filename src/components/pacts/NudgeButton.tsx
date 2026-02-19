@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { Pressable, Text, StyleSheet, Animated } from 'react-native';
+import { Pressable, Text, StyleSheet, Animated, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { spacing, borderRadius, typography, withAlpha } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface NudgeButtonProps {
   onPress: () => void;
@@ -9,6 +11,7 @@ interface NudgeButtonProps {
 }
 
 export default function NudgeButton({ onPress, userName }: NudgeButtonProps) {
+  const { colors } = useTheme();
   const [nudged, setNudged] = useState(false);
   const shakeX = useRef(new Animated.Value(0)).current;
 
@@ -28,8 +31,14 @@ export default function NudgeButton({ onPress, userName }: NudgeButtonProps) {
 
   return (
     <Animated.View style={{ transform: [{ translateX: shakeX }] }}>
-      <Pressable onPress={handlePress} style={styles.button}>
-        <Text style={styles.text}>{nudged ? 'Sent!' : '👋 Nudge'}</Text>
+      <Pressable
+        onPress={handlePress}
+        style={[styles.button, { backgroundColor: withAlpha(colors.primary, 0.09), borderColor: withAlpha(colors.primary, 0.25) }]}
+      >
+        <View style={styles.content}>
+          <Ionicons name="hand-left-outline" size={14} color={colors.primary} />
+          <Text style={[styles.text, { color: colors.primary }]}>{nudged ? 'Sent!' : 'Nudge'}</Text>
+        </View>
       </Pressable>
     </Animated.View>
   );
@@ -38,14 +47,17 @@ export default function NudgeButton({ onPress, userName }: NudgeButtonProps) {
 const styles = StyleSheet.create({
   button: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.primary + '18',
     borderWidth: 1,
-    borderColor: colors.primary + '40',
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   text: {
     ...typography.tiny,
-    color: colors.primary,
+    fontWeight: '600',
   },
 });

@@ -1,8 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Pact } from '@/data/types';
-import { getStreakForUserPact } from '@/data/mock';
+import { getParticipants, getStreakForUserPact, getCompletionRate } from '@/data/mock';
+import ProgressRing from '@/components/ui/ProgressRing';
+import Avatar from '@/components/ui/Avatar';
 import Card from '@/components/ui/Card';
 import IconBadge from '@/components/ui/IconBadge';
 import StreakCounter from './StreakCounter';
@@ -13,14 +16,20 @@ interface StreakCardProps {
 }
 
 export default function StreakCard({ pact }: StreakCardProps) {
+  const { colors } = useTheme();
   const streak = getStreakForUserPact(pact.id, 'u1');
+  const participants = getParticipants(pact).filter(u => !u.isCurrentUser);
+  const completion = getCompletionRate(pact.id, 'u1');
   if (!streak) return null;
 
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
         <IconBadge icon={pact.icon} color={pact.color} size={36} />
-        <Text style={styles.title}>{pact.title}</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{pact.title}</Text>
+        <View style={styles.headerRight}>
+          <ProgressRing progress={completion} size={36} strokeWidth={3} color={pact.color} />
+        </View>
       </View>
 
       <View style={styles.counterRow}>
@@ -29,10 +38,26 @@ export default function StreakCard({ pact }: StreakCardProps) {
 
       <CalendarGrid completedDates={streak.completedDates} color={pact.color} />
 
-      <View style={styles.footer}>
-        <Text style={styles.longestLabel}>Longest streak</Text>
-        <Text style={styles.longestValue}>{streak.longestStreak} days</Text>
+      <View style={[styles.footer, { borderTopColor: colors.border }]}>
+        <Text style={[styles.longestLabel, { color: colors.textTertiary }]}>Longest streak</Text>
+        <Text style={[styles.longestValue, { color: colors.textSecondary }]}>{streak.longestStreak} days</Text>
       </View>
+
+      {participants.length > 0 && (
+        <View style={[styles.friendsRow, { borderTopColor: colors.border }]}>
+          {participants.map((user) => {
+            const friendStreak = getStreakForUserPact(pact.id, user.id);
+            return (
+              <View key={user.id} style={styles.friendItem}>
+                <Avatar uri={user.avatar} name={user.name} size={28} />
+                <Text style={[styles.friendStreak, { color: colors.textSecondary }]}>
+                  {friendStreak?.currentStreak || 0}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
     </Card>
   );
 }
@@ -49,7 +74,10 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h3,
-    color: colors.textPrimary,
+    flex: 1,
+  },
+  headerRight: {
+    marginLeft: 'auto',
   },
   counterRow: {
     marginBottom: spacing.xl,
@@ -61,14 +89,26 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   longestLabel: {
     ...typography.caption,
-    color: colors.textTertiary,
   },
   longestValue: {
     ...typography.bodyBold,
-    color: colors.textSecondary,
+  },
+  friendsRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+  },
+  friendItem: {
+    alignItems: 'center',
+    gap: spacing.xxs,
+  },
+  friendStreak: {
+    ...typography.tiny,
+    fontWeight: '600',
   },
 });

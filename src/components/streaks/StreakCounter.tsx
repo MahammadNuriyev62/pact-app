@@ -1,18 +1,23 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface StreakCounterProps {
   count: number;
   color?: string;
 }
 
-export default function StreakCounter({ count, color = colors.streakFire }: StreakCounterProps) {
+export default function StreakCounter({ count, color }: StreakCounterProps) {
+  const { colors } = useTheme();
+  const countColor = color ?? colors.streakFire;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.fire}>🔥</Text>
-      <Text style={[styles.count, { color }]}>{count}</Text>
-      <Text style={styles.label}>day streak</Text>
+      <Ionicons name="flame" size={28} color={countColor} />
+      <Text style={[styles.count, { color: countColor }]}>{count}</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>day streak</Text>
     </View>
   );
 }
@@ -23,16 +28,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  fire: {
-    fontSize: 28,
-  },
   count: {
-    fontSize: 34,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+    ...typography.hero,
   },
   label: {
     ...typography.body,
-    color: colors.textSecondary,
   },
 });

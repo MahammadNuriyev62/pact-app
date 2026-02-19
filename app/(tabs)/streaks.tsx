@@ -2,42 +2,58 @@ import React from 'react';
 import { View, ScrollView, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, borderRadius, typography, layout, withAlpha } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { pacts, streakData } from '@/data/mock';
 import StreakCard from '@/components/streaks/StreakCard';
+import Header from '@/components/shared/Header';
+import EmptyState from '@/components/shared/EmptyState';
 
 export default function StreaksScreen() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   const totalStreak = streakData
     .filter((s) => s.userId === 'u1')
     .reduce((sum, s) => sum + s.currentStreak, 0);
 
+  const sortedPacts = [...pacts].sort((a, b) => {
+    const streakA = streakData.find(s => s.pactId === a.id && s.userId === 'u1')?.currentStreak || 0;
+    const streakB = streakData.find(s => s.pactId === b.id && s.userId === 'u1')?.currentStreak || 0;
+    return streakB - streakA;
+  });
+
+  const hasStreaks = streakData.some(s => s.userId === 'u1');
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Streaks</Text>
-            <Text style={styles.subtitle}>Your consistency journey</Text>
-          </View>
-          <View style={styles.totalBadge}>
-            <Ionicons name="flame" size={18} color={colors.streakFire} />
-            <Text style={styles.totalCount}>{totalStreak}</Text>
-            <Text style={styles.totalLabel}>total</Text>
-          </View>
-        </View>
+        <Header
+          title="Streaks"
+          subtitle="Your consistency journey"
+          rightAction={
+            <View style={[styles.totalBadge, { backgroundColor: withAlpha(colors.streakFire, 0.12) }]}>
+              <Ionicons name="flame" size={18} color={colors.streakFire} />
+              <Text style={[styles.totalCount, { color: colors.streakFire }]}>{totalStreak}</Text>
+              <Text style={[styles.totalLabel, { color: colors.streakFire }]}>total</Text>
+            </View>
+          }
+        />
 
-        {pacts.map((pact) => (
-          <View key={pact.id}>
-            <StreakCard pact={pact} />
-          </View>
-        ))}
+        {hasStreaks ? (
+          sortedPacts.map((pact) => (
+            <View key={pact.id}>
+              <StreakCard pact={pact} />
+            </View>
+          ))
+        ) : (
+          <EmptyState icon="flame-outline" title="No streaks yet" subtitle="Start a pact to build your streak" />
+        )}
 
-        <View style={{ height: 120 }} />
+        <View style={{ height: layout.tabBarClearance }} />
       </ScrollView>
     </View>
   );
@@ -46,43 +62,23 @@ export default function StreaksScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingHorizontal: spacing.xl,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    marginTop: spacing.xs,
-  },
   totalBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 149, 0, 0.12)',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: 20,
+    borderRadius: borderRadius.xl,
     gap: spacing.xs,
   },
   totalCount: {
     ...typography.h3,
-    color: colors.streakFire,
   },
   totalLabel: {
     ...typography.caption,
-    color: colors.streakFire,
     opacity: 0.7,
   },
 });

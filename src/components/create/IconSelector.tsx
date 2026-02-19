@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Pressable, StyleSheet, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius } from '@/constants/theme';
+import { spacing, borderRadius, layout, withAlpha } from '@/constants/theme';
 import { pactIcons } from '@/constants/icons';
 
 interface IconSelectorProps {
@@ -25,8 +25,8 @@ export default function IconSelector({ selectedIcon, onSelect }: IconSelectorPro
             <Pressable
               style={[
                 styles.iconBtn,
-                { backgroundColor: item.color + '15' },
-                isSelected && { borderColor: item.color, borderWidth: 2, backgroundColor: item.color + '30' },
+                { backgroundColor: withAlpha(item.color, 0.08) },
+                isSelected && { borderColor: item.color, borderWidth: 2, backgroundColor: withAlpha(item.color, 0.19) },
               ]}
               onPress={() => onSelect(item.name, item.color)}
             >
@@ -51,8 +51,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   iconBtn: {
-    width: 56,
-    height: 56,
+    width: layout.iconButtonLg,
+    height: layout.iconButtonLg,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Image, Dimensions, View, Pressable, Text, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
+import { spacing, borderRadius, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -12,6 +13,7 @@ interface PhotoPreviewProps {
 }
 
 export default function PhotoPreview({ photoUri, onRetake, onVerify }: PhotoPreviewProps) {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const slideY = useRef(new Animated.Value(30)).current;
 
@@ -26,13 +28,13 @@ export default function PhotoPreview({ photoUri, onRetake, onVerify }: PhotoPrev
     <Animated.View style={[styles.container, { opacity, transform: [{ translateY: slideY }] }]}>
       <Image source={{ uri: photoUri }} style={styles.photo} />
       <View style={styles.buttons}>
-        <Pressable style={styles.retakeBtn} onPress={onRetake}>
+        <Pressable style={[styles.retakeBtn, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]} onPress={onRetake}>
           <Ionicons name="refresh" size={20} color={colors.textPrimary} />
-          <Text style={styles.btnText}>Retake</Text>
+          <Text style={[styles.btnText, { color: colors.textPrimary }]}>Retake</Text>
         </Pressable>
-        <Pressable style={styles.verifyBtn} onPress={onVerify}>
-          <Ionicons name="sparkles" size={20} color={colors.textPrimary} />
-          <Text style={styles.btnText}>Verify with AI</Text>
+        <Pressable style={[styles.verifyBtn, { backgroundColor: colors.primary }]} onPress={onVerify}>
+          <Ionicons name="sparkles" size={20} color={colors.onPrimary} />
+          <Text style={[styles.btnText, { color: colors.onPrimary }]}>Verify with AI</Text>
         </Pressable>
       </View>
     </Animated.View>
@@ -65,9 +67,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   verifyBtn: {
     flex: 2,
@@ -77,10 +77,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary,
   },
   btnText: {
     ...typography.bodyBold,
-    color: colors.textPrimary,
   },
 });

@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { colors, spacing, borderRadius } from '@/constants/theme';
+import { spacing, borderRadius, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 type TabBarProps = {
   state: any;
@@ -28,11 +29,12 @@ const TAB_LABELS: Record<string, string> = {
 
 export default function TabBar({ state, descriptors, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   return (
     <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-      <BlurView intensity={80} tint="dark" style={styles.blur}>
-        <View style={styles.container}>
+      <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={[styles.blur, { borderColor: colors.border }]}>
+        <View style={[styles.container, { backgroundColor: colors.tabBarBg }]}>
           {state.routes.map((route: any, index: number) => {
             const isFocused = state.index === index;
             const iconName = TAB_ICONS[route.name] || 'ellipse';
@@ -55,11 +57,23 @@ export default function TabBar({ state, descriptors, navigation }: TabBarProps) 
             if (isCamera) {
               return (
                 <Pressable key={route.key} onPress={onPress} style={styles.cameraTabWrapper}>
-                  <View style={[styles.cameraButton, isFocused && styles.cameraButtonActive]}>
+                  <View style={[
+                    styles.cameraButton,
+                    { backgroundColor: colors.backgroundTertiary, borderColor: colors.border },
+                    isFocused && {
+                      backgroundColor: colors.primary,
+                      borderColor: colors.primaryLight,
+                      shadowColor: colors.primary,
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.5,
+                      shadowRadius: 12,
+                      elevation: 8,
+                    },
+                  ]}>
                     <Ionicons
                       name={isFocused ? 'camera' : 'camera-outline'}
                       size={26}
-                      color={isFocused ? colors.textPrimary : colors.textSecondary}
+                      color={isFocused ? colors.onPrimary : colors.textSecondary}
                     />
                   </View>
                   <Text style={[styles.label, { color: isFocused ? colors.primary : colors.textTertiary }]}>
@@ -71,7 +85,7 @@ export default function TabBar({ state, descriptors, navigation }: TabBarProps) 
 
             return (
               <Pressable key={route.key} onPress={onPress} style={styles.tab}>
-                <View style={[styles.iconWrapper, isFocused && styles.iconWrapperActive]}>
+                <View style={[styles.iconWrapper, isFocused && { backgroundColor: colors.tabBarActiveBg }]}>
                   <Ionicons
                     name={
                       isFocused
@@ -106,7 +120,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xxl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.border,
   },
   container: {
     flexDirection: 'row',
@@ -114,7 +127,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
-    backgroundColor: 'rgba(20, 20, 28, 0.85)',
   },
   tab: {
     alignItems: 'center',
@@ -129,14 +141,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: borderRadius.md,
   },
-  iconWrapperActive: {
-    backgroundColor: 'rgba(124, 92, 252, 0.12)',
-  },
   label: {
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: 2,
-    letterSpacing: 0.3,
+    ...typography.tabLabel,
+    marginTop: spacing.xxs,
   },
   cameraTabWrapper: {
     alignItems: 'center',
@@ -148,19 +155,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 34,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundTertiary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cameraButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primaryLight,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
   },
 });

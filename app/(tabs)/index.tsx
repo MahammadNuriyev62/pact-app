@@ -1,23 +1,33 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Text, Image, Pressable } from 'react-native';
+import Logo from '@/components/ui/Logo';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '@/constants/theme';
-import { pacts, currentUser, notifications } from '@/data/mock';
+import { spacing, borderRadius, typography, layout } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { pacts, currentUser, notifications, getUnreadNotificationCount } from '@/data/mock';
 import PactCard from '@/components/pacts/PactCard';
 import ActivityFeed from '@/components/pacts/ActivityFeed';
 import DeadlineWarning from '@/components/pacts/DeadlineWarning';
+import EmptyState from '@/components/shared/EmptyState';
+
+const NEXT_MODE: Record<string, 'light' | 'dark'> = {
+  system: 'light',
+  light: 'dark',
+  dark: 'light',
+};
 
 export default function PactsHomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark, mode, setMode } = useTheme();
   const [showWarning, setShowWarning] = useState(true);
 
   const deadlineWarning = notifications.find(n => n.type === 'deadline_warning' && !n.read);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -25,21 +35,37 @@ export default function PactsHomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.logo}>pact</Text>
-            <Text style={styles.greeting}>Keep your promises</Text>
+            <Logo color={colors.textPrimary} />
+            <Text style={[styles.greeting, { color: colors.textTertiary }]}>Keep your promises</Text>
           </View>
-          <Pressable style={styles.profileButton}>
-            <Image source={{ uri: currentUser.avatar }} style={styles.profileAvatar} />
-            <View style={styles.notifDot} />
-          </Pressable>
+          <View style={styles.headerRight}>
+            <Pressable
+              style={[styles.themeToggle, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}
+              onPress={() => setMode(NEXT_MODE[mode])}
+            >
+              <Ionicons name={isDark ? 'sunny' : 'moon'} size={18} color={colors.textSecondary} />
+            </Pressable>
+            <Pressable
+              style={[styles.themeToggle, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}
+              onPress={() => router.push('/notifications')}
+            >
+              <Ionicons name="notifications-outline" size={18} color={colors.textSecondary} />
+              {getUnreadNotificationCount() > 0 && (
+                <View style={[styles.bellDot, { backgroundColor: colors.error }]} />
+              )}
+            </Pressable>
+            <Pressable style={styles.profileButton} onPress={() => router.push('/profile')}>
+              <Image source={{ uri: currentUser.avatar }} style={[styles.profileAvatar, { borderColor: colors.primary }]} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Deadline Warning */}
         {showWarning && deadlineWarning && (
           <View>
             <DeadlineWarning
-              pactTitle="Meditate"
-              hoursLeft={2}
+              pactTitle={pacts.find(p => p.id === deadlineWarning.pactId)?.title || 'Pact'}
+              hoursLeft={Math.max(1, Math.round((new Date(deadlineWarning.timestamp).getTime() - Date.now()) / 3600000))}
               onDismiss={() => setShowWarning(false)}
             />
           </View>
@@ -52,20 +78,27 @@ export default function PactsHomeScreen() {
 
         {/* Pacts List */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Pacts</Text>
-          <Text style={styles.sectionCount}>{pacts.length} active</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Your Pacts</Text>
+          <Text style={[styles.sectionCount, { color: colors.textTertiary }]}>{pacts.length} active</Text>
         </View>
 
-        {pacts.map((pact) => (
-          <View key={pact.id}>
-            <PactCard
-              pact={pact}
-              onPress={() => router.push(`/pact/${pact.id}`)}
-            />
-          </View>
-        ))}
+        {pacts.length > 0 ? (
+          pacts.map((pact) => (
+            <View key={pact.id}>
+              <PactCard pact={pact} onPress={() => router.push(`/pact/${pact.id}`)} />
+            </View>
+          ))
+        ) : (
+          <EmptyState
+            icon="people"
+            title="No pacts yet"
+            subtitle="Create your first pact and invite friends to join"
+            actionLabel="Create Pact"
+            onAction={() => router.push('/(tabs)/new-pact')}
+          />
+        )}
 
-        <View style={{ height: 120 }} />
+        <View style={{ height: layout.tabBarClearance }} />
       </ScrollView>
     </View>
   );
@@ -74,7 +107,6 @@ export default function PactsHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingHorizontal: spacing.xl,
@@ -86,16 +118,22 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
   },
-  logo: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: colors.textPrimary,
-    letterSpacing: -1,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  themeToggle: {
+    width: layout.iconButtonSm,
+    height: layout.iconButtonSm,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
   greeting: {
     ...typography.caption,
-    color: colors.textTertiary,
-    marginTop: 2,
+    marginTop: spacing.xxs,
   },
   profileButton: {
     position: 'relative',
@@ -105,18 +143,14 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: colors.primary,
   },
-  notifDot: {
+  bellDot: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.error,
-    borderWidth: 2,
-    borderColor: colors.background,
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   section: {
     flexDirection: 'row',
@@ -127,10 +161,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h2,
-    color: colors.textPrimary,
   },
   sectionCount: {
     ...typography.caption,
-    color: colors.textTertiary,
   },
 });

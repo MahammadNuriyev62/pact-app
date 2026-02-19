@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { withAlpha } from '@/constants/theme';
 
 interface IconBadgeProps {
   icon: string;
@@ -17,7 +18,7 @@ export default function IconBadge({ icon, color, size = 40 }: IconBadgeProps) {
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: color + '20',
+          backgroundColor: withAlpha(color, 0.125),
         },
       ]}
     >

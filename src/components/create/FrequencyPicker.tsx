@@ -33,7 +33,7 @@ export default function FrequencyPicker({
 
       {frequency === 'weekly' && (
         <View style={styles.timesRow}>
-          {[2, 3, 4, 5, 6].map((n) => (
+          {[1, 2, 3, 4, 5, 6].map((n) => (
             <Chip
               key={n}
               label={`${n}x`}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, borderRadius, typography } from '@/constants/theme';
+import { borderRadius, spacing, typography } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import Avatar from './Avatar';
 
 interface AvatarGroupProps {
@@ -10,6 +11,7 @@ interface AvatarGroupProps {
 }
 
 export default function AvatarGroup({ users, max = 3, size = 28 }: AvatarGroupProps) {
+  const { colors } = useTheme();
   const visible = users.slice(0, max);
   const overflow = users.length - max;
 
@@ -20,7 +22,8 @@ export default function AvatarGroup({ users, max = 3, size = 28 }: AvatarGroupPr
           key={i}
           style={[
             styles.avatarWrapper,
-            i > 0 && { marginLeft: -8 },
+            { borderColor: colors.backgroundSecondary },
+            i > 0 && { marginLeft: -spacing.sm },
             { zIndex: visible.length - i, borderRadius: (size + 4) / 2 },
           ]}
         >
@@ -31,10 +34,10 @@ export default function AvatarGroup({ users, max = 3, size = 28 }: AvatarGroupPr
         <View
           style={[
             styles.overflowBadge,
-            { marginLeft: -8, width: size, height: size, borderRadius: size / 2 },
+            { marginLeft: -spacing.sm, width: size, height: size, borderRadius: size / 2, backgroundColor: colors.backgroundTertiary, borderColor: colors.backgroundSecondary },
           ]}
         >
-          <Text style={[styles.overflowText, { fontSize: size * 0.38 }]}>+{overflow}</Text>
+          <Text style={[styles.overflowText, { fontSize: size * 0.38, color: colors.textSecondary }]}>+{overflow}</Text>
         </View>
       )}
     </View>
@@ -48,17 +51,13 @@ const styles = StyleSheet.create({
   },
   avatarWrapper: {
     borderWidth: 2,
-    borderColor: colors.backgroundSecondary,
   },
   overflowBadge: {
-    backgroundColor: colors.backgroundTertiary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.backgroundSecondary,
   },
   overflowText: {
-    color: colors.textSecondary,
-    fontWeight: '700',
+    fontWeight: typography.h1.fontWeight,
   },
 });

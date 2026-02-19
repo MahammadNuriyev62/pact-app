@@ -1,5 +1,7 @@
 import React, { useRef } from 'react';
 import { Pressable, StyleSheet, View, Animated } from 'react-native';
+import { withAlpha } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ShutterButtonProps {
   onPress: () => void;
@@ -7,6 +9,7 @@ interface ShutterButtonProps {
 }
 
 export default function ShutterButton({ onPress, disabled = false }: ShutterButtonProps) {
+  const { colors } = useTheme();
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -24,9 +27,9 @@ export default function ShutterButton({ onPress, disabled = false }: ShutterButt
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled}
-        style={styles.outer}
+        style={[styles.outer, { borderColor: colors.overlayTextPrimary, backgroundColor: withAlpha(colors.overlayTextPrimary, 0.15) }]}
       >
-        <View style={styles.inner} />
+        <View style={[styles.inner, { backgroundColor: colors.overlayTextPrimary }]} />
       </Pressable>
     </Animated.View>
   );
@@ -38,8 +41,6 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 35,
     borderWidth: 3,
-    borderColor: '#FFFFFF',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -47,6 +48,5 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: '#FFFFFF',
   },
 });
