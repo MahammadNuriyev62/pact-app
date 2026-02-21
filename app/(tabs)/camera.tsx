@@ -83,8 +83,41 @@ export default function CameraScreen() {
   const handleSend = async () => {
     if (detectedPactId && photoUri) {
       try {
-        const { api } = require('@/api/client');
-        await api.post('/submissions', { pactId: detectedPactId, photoUri });
+        const { getToken } = require('@/api/client');
+        const { Platform } = require('react-native');
+
+        const formData = new FormData();
+        formData.append('pactId', detectedPactId);
+
+        if (Platform.OS === 'web') {
+          // On web, fetch the blob from the local URI and append as file
+          const response = await fetch(photoUri);
+          const blob = await response.blob();
+          formData.append('photo', blob, 'photo.jpg');
+        } else {
+          // On native, use the file URI directly
+          formData.append('photo', {
+            uri: photoUri,
+            type: 'image/jpeg',
+            name: 'photo.jpg',
+          } as any);
+        }
+
+        const token = await getToken();
+        const baseUrl = require('@/api/client').getBaseUrl();
+        const res = await fetch(`${baseUrl}/submissions`, {
+          method: 'POST',
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Upload failed');
+        }
+
         await refetch();
       } catch (e) {
         console.error('Failed to submit:', e);

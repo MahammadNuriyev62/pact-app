@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-const getBaseUrl = () => {
+export const getBaseUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     // On Lightning AI, use the proxy URL pattern for port 3000
     const currentUrl = window.location.href;
