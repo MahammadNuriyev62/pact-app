@@ -12,6 +12,7 @@ import PactCard from '@/components/pacts/PactCard';
 import ActivityFeed from '@/components/pacts/ActivityFeed';
 import DeadlineWarning from '@/components/pacts/DeadlineWarning';
 import EmptyState from '@/components/shared/EmptyState';
+import HomeSkeleton from '@/components/shared/HomeSkeleton';
 
 const NEXT_MODE: Record<string, 'light' | 'dark'> = {
   system: 'light',
@@ -24,7 +25,7 @@ export default function PactsHomeScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark, mode, setMode } = useTheme();
   const { user } = useAuth();
-  const { pacts, notifications, getUnreadNotificationCount } = useData();
+  const { pacts, notifications, getUnreadNotificationCount, loading } = useData();
   const [showWarning, setShowWarning] = useState(true);
 
   const deadlineWarning = notifications.find(n => n.type === 'deadline_warning' && !n.read);
@@ -74,31 +75,37 @@ export default function PactsHomeScreen() {
           </View>
         )}
 
-        {/* Activity Feed */}
-        <View>
-          <ActivityFeed />
-        </View>
-
-        {/* Pacts List */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Your Pacts</Text>
-          <Text style={[styles.sectionCount, { color: colors.textTertiary }]}>{pacts.length} active</Text>
-        </View>
-
-        {pacts.length > 0 ? (
-          pacts.map((pact) => (
-            <View key={pact.id}>
-              <PactCard pact={pact} onPress={() => router.push(`/pact/${pact.id}`)} />
-            </View>
-          ))
+        {loading ? (
+          <HomeSkeleton />
         ) : (
-          <EmptyState
-            icon="people"
-            title="No pacts yet"
-            subtitle="Create your first pact and invite friends to join"
-            actionLabel="Create Pact"
-            onAction={() => router.push('/(tabs)/new-pact')}
-          />
+          <>
+            {/* Activity Feed */}
+            <View>
+              <ActivityFeed />
+            </View>
+
+            {/* Pacts List */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Your Pacts</Text>
+              <Text style={[styles.sectionCount, { color: colors.textTertiary }]}>{pacts.length} active</Text>
+            </View>
+
+            {pacts.length > 0 ? (
+              pacts.map((pact) => (
+                <View key={pact.id}>
+                  <PactCard pact={pact} onPress={() => router.push(`/pact/${pact.id}`)} />
+                </View>
+              ))
+            ) : (
+              <EmptyState
+                icon="people"
+                title="No pacts yet"
+                subtitle="Create your first pact and invite friends to join"
+                actionLabel="Create Pact"
+                onAction={() => router.push('/(tabs)/new-pact')}
+              />
+            )}
+          </>
         )}
 
         <View style={{ height: layout.tabBarClearance }} />
