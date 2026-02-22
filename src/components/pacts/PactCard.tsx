@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Pact } from '@/data/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
+import { api } from '@/api/client';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Card from '@/components/ui/Card';
@@ -44,6 +45,7 @@ export default function PactCard({ pact, onPress }: PactCardProps) {
   const handleNudge = (userId: string) => {
     runShake();
     setNudgedIds((prev) => new Set(prev).add(userId));
+    api.post(`/nudge/${pact.id}`, { targetUserId: userId }).catch(console.error);
     setTimeout(() => {
       setNudgedIds((prev) => {
         const next = new Set(prev);
@@ -57,6 +59,7 @@ export default function PactCard({ pact, onPress }: PactCardProps) {
     runShake();
     const allIds = new Set(pendingFriends.map((f) => f.id));
     setNudgedIds(allIds);
+    api.post(`/nudge/${pact.id}`).catch(console.error);
     setTimeout(() => setNudgedIds(new Set()), 2000);
   };
 

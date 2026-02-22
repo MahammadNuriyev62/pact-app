@@ -70,6 +70,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (token) {
       refetch();
+    } else {
+      // Clear all data on logout so next login starts fresh
+      setPacts([]);
+      setUsers([]);
+      setStreaks([]);
+      setNotifications([]);
+      setActivity({});
+      setRecentActivity([]);
+      setLoading(false);
     }
   }, [token]);
 

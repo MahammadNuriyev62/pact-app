@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, Text, Image, Pressable } from 'react-native';
 import Logo from '@/components/ui/Logo';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, borderRadius, typography, layout } from '@/constants/theme';
@@ -25,8 +26,15 @@ export default function PactsHomeScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark, mode, setMode } = useTheme();
   const { user } = useAuth();
-  const { pacts, notifications, getUnreadNotificationCount, loading } = useData();
+  const { pacts, notifications, getUnreadNotificationCount, loading, refetch } = useData();
   const [showWarning, setShowWarning] = useState(true);
+
+  // Refetch data whenever the home screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const deadlineWarning = notifications.find(n => n.type === 'deadline_warning' && !n.read);
 

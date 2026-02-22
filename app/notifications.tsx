@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, FlatList, StyleSheet, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, borderRadius, typography } from '@/constants/theme';
@@ -39,6 +40,13 @@ export default function NotificationsScreen() {
   }), [isDark]);
 
   const [notificationsList, setNotificationsList] = useState(dataNotifications);
+
+  // Refetch data whenever the notifications screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   React.useEffect(() => {
     setNotificationsList(dataNotifications);
