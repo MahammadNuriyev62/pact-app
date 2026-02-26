@@ -6,6 +6,8 @@ export const queryKeys = {
   },
   users: {
     all: ['users'] as const,
+    search: (q: string) => ['users', 'search', q] as const,
+    friendRequests: ['users', 'friend-requests'] as const,
   },
   streaks: {
     all: ['streaks'] as const,

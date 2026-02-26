@@ -88,4 +88,6 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(body),
     }),
+  del: <T>(path: string) =>
+    apiFetch<T>(path, { method: 'DELETE' }),
 };

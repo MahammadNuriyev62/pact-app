@@ -6,8 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, borderRadius, typography } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useNotifications } from '@/api/queries';
-import { useMarkNotificationsRead, useAcceptInvitation, useDeclineInvitation } from '@/api/mutations';
+import { useNotifications, useFriendRequests } from '@/api/queries';
+import { useMarkNotificationsRead, useAcceptInvitation, useDeclineInvitation, useAcceptFriendRequest, useDeclineFriendRequest } from '@/api/mutations';
 import { queryKeys } from '@/api/queryKeys';
 import { useQueryClient } from '@tanstack/react-query';
 import IconBadge from '@/components/ui/IconBadge';
@@ -37,13 +37,18 @@ export default function NotificationsScreen() {
   const markReadMutation = useMarkNotificationsRead();
   const acceptMutation = useAcceptInvitation();
   const declineMutation = useDeclineInvitation();
+  const { data: friendRequests = [] } = useFriendRequests();
+  const acceptFriend = useAcceptFriendRequest();
+  const declineFriend = useDeclineFriendRequest();
 
-  const iconMap = useMemo<Record<Notification['type'], { icon: string; color: string }>>(() => ({
-    nudge:            { icon: 'hand-left', color: adaptColor('#4ECDC4', isDark) },
-    deadline_warning: { icon: 'alarm',     color: adaptColor('#FF6B6B', isDark) },
-    streak_milestone: { icon: 'trophy',    color: adaptColor('#FFE66D', isDark) },
-    new_submission:   { icon: 'camera',    color: adaptColor('#95E1D3', isDark) },
-    pact_invitation:  { icon: 'mail',      color: adaptColor('#7C5CFC', isDark) },
+  const iconMap = useMemo<Record<string, { icon: string; color: string }>>(() => ({
+    nudge:            { icon: 'hand-left',    color: adaptColor('#4ECDC4', isDark) },
+    deadline_warning: { icon: 'alarm',        color: adaptColor('#FF6B6B', isDark) },
+    streak_milestone: { icon: 'trophy',       color: adaptColor('#FFE66D', isDark) },
+    new_submission:   { icon: 'camera',       color: adaptColor('#95E1D3', isDark) },
+    pact_invitation:  { icon: 'mail',         color: adaptColor('#7C5CFC', isDark) },
+    friend_request:   { icon: 'person-add',   color: adaptColor('#4ECDC4', isDark) },
+    friend_accepted:  { icon: 'people',       color: adaptColor('#95E1D3', isDark) },
   }), [isDark]);
 
   const [notificationsList, setNotificationsList] = useState(dataNotifications);
@@ -76,7 +81,7 @@ export default function NotificationsScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: Notification }) => {
-      const { icon, color } = iconMap[item.type];
+      const { icon, color } = iconMap[item.type] || { icon: 'notifications', color: colors.textTertiary };
 
       return (
         <View
@@ -139,14 +144,58 @@ export default function NotificationsScreen() {
                 </Pressable>
               </View>
             )}
+            {item.type === 'friend_request' && !item.read && (() => {
+              const req = friendRequests.find(r => r.id === item.fromUserId);
+              if (!req) return null;
+              return (
+                <View style={styles.invitationActions}>
+                  <Pressable
+                    style={[styles.acceptBtn, { backgroundColor: colors.success }, loadingAction === item.id && styles.disabled]}
+                    disabled={loadingAction === item.id}
+                    onPress={async () => {
+                      setLoadingAction(item.id);
+                      try {
+                        await acceptFriend.mutateAsync(req.friendshipId);
+                        await markReadMutation.mutateAsync();
+                      } catch (e) { console.error(e); }
+                      setLoadingAction(null);
+                    }}
+                  >
+                    {loadingAction === item.id ? (
+                      <ActivityIndicator size="small" color={colors.onSuccess} />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark" size={16} color={colors.onSuccess} />
+                        <Text style={[styles.actionText, { color: colors.onSuccess }]}>Accept</Text>
+                      </>
+                    )}
+                  </Pressable>
+                  <Pressable
+                    style={[styles.declineBtn, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }, loadingAction === item.id && styles.disabled]}
+                    disabled={loadingAction === item.id}
+                    onPress={async () => {
+                      setLoadingAction(item.id);
+                      try {
+                        await declineFriend.mutateAsync(req.friendshipId);
+                        await markReadMutation.mutateAsync();
+                      } catch (e) { console.error(e); }
+                      setLoadingAction(null);
+                    }}
+                  >
+                    <Ionicons name="close" size={16} color={colors.textSecondary} />
+                    <Text style={[styles.actionText, { color: colors.textSecondary }]}>Decline</Text>
+                  </Pressable>
+                </View>
+              );
+            })()}
           </View>
-          {!item.read && item.type !== 'pact_invitation' && (
+          {!item.read && item.type !== 'pact_invitation' && item.type !== 'friend_request' && (
             <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
           )}
         </View>
       );
     },
-    [colors, iconMap, acceptMutation, declineMutation, loadingAction]
+    [colors, iconMap, acceptMutation, declineMutation, acceptFriend, declineFriend, friendRequests, markReadMutation, loadingAction]
   );
 
   const keyExtractor = useCallback((item: Notification) => item.id, []);

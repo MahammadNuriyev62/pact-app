@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ScrollView,
   View,
   Text,
   Pressable,
   Image,
+  TextInput,
   StyleSheet,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,8 +17,19 @@ import { spacing, borderRadius, typography, layout } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDataHelpers } from '@/api/helpers';
+import { useUserSearch, useFriendRequests } from '@/api/queries';
+import { useSendFriendRequest, useAcceptFriendRequest, useDeclineFriendRequest } from '@/api/mutations';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
+
+function useDebouncedValue(value: string, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
 
 const NEXT_MODE: Record<string, 'light' | 'dark'> = {
   system: 'light',
@@ -31,10 +44,19 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark, mode, setMode } = useTheme();
   const { user, logout } = useAuth();
-  const { users, pacts, streaks: streakData, recentActivity } = useDataHelpers();
+  const { users: friends, pacts, streaks: streakData, recentActivity } = useDataHelpers();
   const [signingOut, setSigningOut] = React.useState(false);
 
-  const friends = users;
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedQuery = useDebouncedValue(searchQuery);
+  const [showSearch, setShowSearch] = useState(false);
+  const { data: searchResults = [], isFetching: searching } = useUserSearch(debouncedQuery);
+  const { data: friendRequests = [] } = useFriendRequests();
+
+  const sendRequest = useSendFriendRequest();
+  const acceptRequest = useAcceptFriendRequest();
+  const declineRequest = useDeclineFriendRequest();
 
   // Stats
   const totalPacts = pacts.length;
@@ -128,32 +150,143 @@ export default function ProfileScreen() {
 
         {/* Friends section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Friends</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Friends{friends.length > 0 ? ` (${friends.length})` : ''}
+            </Text>
+            <Pressable onPress={() => setShowSearch(!showSearch)}>
+              <Ionicons name={showSearch ? 'close' : 'person-add'} size={22} color={colors.primary} />
+            </Pressable>
+          </View>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.friendsScroll}
-        >
-          {friends.map((friend) => {
-            const firstName = friend.name.split(' ')[0];
-            return (
-              <View key={friend.id} style={styles.friendItem}>
-                <Image
-                  source={{ uri: friend.avatar }}
-                  style={styles.friendAvatar}
-                />
-                <Text
-                  style={[styles.friendName, { color: colors.textSecondary }]}
-                  numberOfLines={1}
+        {/* Friend requests */}
+        {friendRequests.length > 0 && (
+          <View style={[styles.requestsContainer, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+            <Text style={[styles.requestsTitle, { color: colors.textSecondary }]}>
+              Friend Requests ({friendRequests.length})
+            </Text>
+            {friendRequests.map((req) => (
+              <View key={req.friendshipId} style={styles.requestRow}>
+                <Image source={{ uri: req.avatar }} style={styles.requestAvatar} />
+                <View style={styles.requestInfo}>
+                  <Text style={[styles.requestName, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {req.name}
+                  </Text>
+                  <Text style={[styles.requestUsername, { color: colors.textTertiary }]} numberOfLines={1}>
+                    @{req.username}
+                  </Text>
+                </View>
+                <Pressable
+                  style={[styles.requestBtn, { backgroundColor: colors.primary }]}
+                  onPress={() => acceptRequest.mutate(req.friendshipId)}
                 >
-                  {firstName}
-                </Text>
+                  <Ionicons name="checkmark" size={18} color="#fff" />
+                </Pressable>
+                <Pressable
+                  style={[styles.requestBtn, { backgroundColor: colors.border }]}
+                  onPress={() => declineRequest.mutate(req.friendshipId)}
+                >
+                  <Ionicons name="close" size={18} color={colors.textSecondary} />
+                </Pressable>
               </View>
-            );
-          })}
-        </ScrollView>
+            ))}
+          </View>
+        )}
+
+        {/* Search UI */}
+        {showSearch && (
+          <View style={styles.searchSection}>
+            <TextInput
+              style={[styles.searchInput, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border, color: colors.textPrimary }]}
+              placeholder="Search by name or username..."
+              placeholderTextColor={colors.textTertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoFocus
+            />
+            {searching && <ActivityIndicator style={styles.searchLoading} color={colors.primary} />}
+            {searchResults.map((result) => (
+              <View key={result.id} style={[styles.searchRow, { borderColor: colors.border }]}>
+                <Image source={{ uri: result.avatar }} style={styles.searchAvatar} />
+                <View style={styles.searchInfo}>
+                  <Text style={[styles.searchName, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {result.name}
+                  </Text>
+                  <Text style={[styles.searchUsername, { color: colors.textTertiary }]} numberOfLines={1}>
+                    @{result.username}
+                  </Text>
+                </View>
+                {result.friendshipStatus === 'accepted' ? (
+                  <View style={[styles.statusBadge, { backgroundColor: colors.success + '20' }]}>
+                    <Text style={[styles.statusText, { color: colors.success }]}>Friends</Text>
+                  </View>
+                ) : result.friendshipStatus === 'pending' && result.friendshipDirection === 'outgoing' ? (
+                  <View style={[styles.statusBadge, { backgroundColor: colors.border }]}>
+                    <Text style={[styles.statusText, { color: colors.textTertiary }]}>Pending</Text>
+                  </View>
+                ) : result.friendshipStatus === 'pending' && result.friendshipDirection === 'incoming' ? (
+                  <Pressable
+                    style={[styles.addBtn, { backgroundColor: colors.primary }]}
+                    onPress={() => result.friendshipId && acceptRequest.mutate(result.friendshipId)}
+                  >
+                    <Text style={styles.addBtnText}>Accept</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    style={[styles.addBtn, { backgroundColor: colors.primary }]}
+                    onPress={() => sendRequest.mutate(result.id)}
+                    disabled={sendRequest.isPending}
+                  >
+                    <Ionicons name="person-add" size={16} color="#fff" />
+                    <Text style={styles.addBtnText}>Add</Text>
+                  </Pressable>
+                )}
+              </View>
+            ))}
+            {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
+              <Text style={[styles.noResults, { color: colors.textTertiary }]}>No users found</Text>
+            )}
+          </View>
+        )}
+
+        {/* Friends list */}
+        {friends.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.friendsScroll}
+          >
+            {friends.map((friend) => {
+              const firstName = friend.name.split(' ')[0];
+              return (
+                <View key={friend.id} style={styles.friendItem}>
+                  <Image
+                    source={{ uri: friend.avatar }}
+                    style={styles.friendAvatar}
+                  />
+                  <Text
+                    style={[styles.friendName, { color: colors.textSecondary }]}
+                    numberOfLines={1}
+                  >
+                    {firstName}
+                  </Text>
+                </View>
+              );
+            })}
+          </ScrollView>
+        ) : !showSearch ? (
+          <Pressable
+            style={[styles.emptyFriends, { borderColor: colors.border }]}
+            onPress={() => setShowSearch(true)}
+          >
+            <Ionicons name="people-outline" size={32} color={colors.textTertiary} />
+            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
+              No friends yet. Tap to search and add friends!
+            </Text>
+          </Pressable>
+        ) : null}
 
         {/* Sign out button */}
         <View style={styles.signOutContainer}>
@@ -245,6 +378,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
     marginBottom: spacing.md,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   sectionTitle: {
     ...typography.h3,
   },
@@ -268,6 +406,105 @@ const styles = StyleSheet.create({
   settingsValue: {
     ...typography.caption,
   },
+  // Friend requests
+  requestsContainer: {
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  requestsTitle: {
+    ...typography.captionBold,
+    marginBottom: spacing.sm,
+  },
+  requestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  requestAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  requestInfo: {
+    flex: 1,
+  },
+  requestName: {
+    ...typography.bodyBold,
+  },
+  requestUsername: {
+    ...typography.caption,
+  },
+  requestBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Search
+  searchSection: {
+    marginBottom: spacing.md,
+  },
+  searchInput: {
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    ...typography.body,
+  },
+  searchLoading: {
+    marginTop: spacing.md,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    gap: spacing.md,
+  },
+  searchAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  searchInfo: {
+    flex: 1,
+  },
+  searchName: {
+    ...typography.bodyBold,
+  },
+  searchUsername: {
+    ...typography.caption,
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  statusText: {
+    ...typography.caption,
+  },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+  },
+  addBtnText: {
+    ...typography.captionBold,
+    color: '#fff',
+  },
+  noResults: {
+    ...typography.body,
+    textAlign: 'center',
+    marginTop: spacing.lg,
+  },
+  // Friends list
   friendsScroll: {
     gap: spacing.lg,
     paddingVertical: spacing.sm,
@@ -285,6 +522,19 @@ const styles = StyleSheet.create({
     ...typography.caption,
     marginTop: spacing.sm,
     textAlign: 'center',
+  },
+  emptyFriends: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+  },
+  emptyText: {
+    ...typography.body,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
   },
   signOutContainer: {
     marginTop: spacing.xxxl,

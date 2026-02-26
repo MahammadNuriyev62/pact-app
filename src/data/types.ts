@@ -43,9 +43,9 @@ export interface StreakData {
 
 export interface Notification {
   id: string;
-  type: 'nudge' | 'deadline_warning' | 'streak_milestone' | 'new_submission' | 'pact_invitation';
+  type: 'nudge' | 'deadline_warning' | 'streak_milestone' | 'new_submission' | 'pact_invitation' | 'friend_request' | 'friend_accepted';
   fromUserId?: string;
-  pactId: string;
+  pactId?: string;
   message: string;
   timestamp: string;
   read: boolean;

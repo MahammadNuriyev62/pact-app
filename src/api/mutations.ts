@@ -120,3 +120,50 @@ export function useNudge() {
       api.post<{ success: boolean; nudged: string[] }>(`/nudge/${pactId}`, { targetUserId }),
   });
 }
+
+export function useSendFriendRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => api.post('/users/friend-request', { userId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'search'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.friendRequests });
+    },
+  });
+}
+
+export function useAcceptFriendRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (friendshipId: string) => api.post('/users/friend-accept', { friendshipId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.friendRequests });
+      queryClient.invalidateQueries({ queryKey: ['users', 'search'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+    },
+  });
+}
+
+export function useDeclineFriendRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (friendshipId: string) => api.post('/users/friend-decline', { friendshipId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.friendRequests });
+      queryClient.invalidateQueries({ queryKey: ['users', 'search'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+    },
+  });
+}
+
+export function useRemoveFriend() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => api.del(`/users/friend/${userId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: ['users', 'search'] });
+    },
+  });
+}

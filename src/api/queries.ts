@@ -62,6 +62,43 @@ export function useRecentActivity() {
   });
 }
 
+export interface UserSearchResult {
+  id: string;
+  name: string;
+  username: string;
+  avatar: string;
+  friendshipStatus: 'none' | 'pending' | 'accepted' | 'declined';
+  friendshipDirection: 'outgoing' | 'incoming' | null;
+  friendshipId: string | null;
+}
+
+export interface FriendRequest {
+  friendshipId: string;
+  id: string;
+  name: string;
+  username: string;
+  avatar: string;
+  createdAt: string;
+}
+
+export function useUserSearch(query: string) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: queryKeys.users.search(query),
+    queryFn: () => api.get<UserSearchResult[]>(`/users/search?q=${encodeURIComponent(query)}`),
+    enabled: !!token && query.length >= 2,
+  });
+}
+
+export function useFriendRequests() {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: queryKeys.users.friendRequests,
+    queryFn: () => api.get<FriendRequest[]>('/users/friend-requests'),
+    enabled: !!token,
+  });
+}
+
 export function usePactSubmissions(pactId: string) {
   const { token } = useAuth();
   return useQuery({
