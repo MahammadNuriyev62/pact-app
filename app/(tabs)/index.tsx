@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, Text, Image, Pressable } from 'react-native';
+import { View, ScrollView, StyleSheet, Text, Image, Pressable, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import Logo from '@/components/ui/Logo';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -17,6 +18,8 @@ import ActivityFeed from '@/components/pacts/ActivityFeed';
 import DeadlineWarning from '@/components/pacts/DeadlineWarning';
 import EmptyState from '@/components/shared/EmptyState';
 import HomeSkeleton from '@/components/shared/HomeSkeleton';
+
+const HEADER_HEIGHT = 80;
 
 const NEXT_MODE: Record<string, 'light' | 'dark'> = {
   system: 'light',
@@ -46,40 +49,53 @@ export default function PactsHomeScreen() {
 
   const deadlineWarning = notifications.find(n => n.type === 'deadline_warning' && !n.read);
 
+  const headerContent = (
+    <View style={[styles.header, { paddingHorizontal: spacing.xxxl }]}>
+      <Logo color={colors.textPrimary} width={86} height={48} />
+      <View style={styles.headerRight}>
+        <Pressable
+          style={[styles.themeToggle, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}
+          onPress={() => setMode(NEXT_MODE[mode])}
+        >
+          <Ionicons name={isDark ? 'sunny' : 'moon'} size={18} color={colors.textSecondary} />
+        </Pressable>
+        <Pressable
+          style={[styles.themeToggle, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}
+          onPress={() => router.push('/notifications')}
+        >
+          <Ionicons name="notifications-outline" size={18} color={colors.textSecondary} />
+          {getUnreadNotificationCount() > 0 && (
+            <View style={[styles.bellDot, { backgroundColor: colors.error }]} />
+          )}
+        </Pressable>
+        <Pressable style={styles.profileButton} onPress={() => router.push('/profile')}>
+          <Image source={{ uri: user?.avatar }} style={[styles.profileAvatar, { borderColor: colors.primary }]} />
+        </Pressable>
+      </View>
+    </View>
+  );
+
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+      {/* Sticky Header */}
+      {Platform.OS === 'web' ? (
+        <View style={{ position: 'absolute' as any, top: 0, left: 0, right: 0, zIndex: 10, paddingTop: Math.max(insets.top, spacing.xs), backgroundColor: colors.background, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
+          {headerContent}
+        </View>
+      ) : (
+        <BlurView
+          intensity={80}
+          tint={isDark ? 'dark' : 'light'}
+          style={[styles.stickyHeader, { borderBottomColor: colors.border }]}
+        >
+          {headerContent}
+        </BlurView>
+      )}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: HEADER_HEIGHT + Math.max(insets.top, spacing.xs) }]}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Logo color={colors.textPrimary} />
-            <Text style={[styles.greeting, { color: colors.textTertiary }]}>Keep your promises</Text>
-          </View>
-          <View style={styles.headerRight}>
-            <Pressable
-              style={[styles.themeToggle, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}
-              onPress={() => setMode(NEXT_MODE[mode])}
-            >
-              <Ionicons name={isDark ? 'sunny' : 'moon'} size={18} color={colors.textSecondary} />
-            </Pressable>
-            <Pressable
-              style={[styles.themeToggle, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}
-              onPress={() => router.push('/notifications')}
-            >
-              <Ionicons name="notifications-outline" size={18} color={colors.textSecondary} />
-              {getUnreadNotificationCount() > 0 && (
-                <View style={[styles.bellDot, { backgroundColor: colors.error }]} />
-              )}
-            </Pressable>
-            <Pressable style={styles.profileButton} onPress={() => router.push('/profile')}>
-              <Image source={{ uri: user?.avatar }} style={[styles.profileAvatar, { borderColor: colors.primary }]} />
-            </Pressable>
-          </View>
-        </View>
-
         {/* Deadline Warning */}
         {showWarning && deadlineWarning && (
           <View>
@@ -135,14 +151,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.xxl,
+  },
+  stickyHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
+    height: HEADER_HEIGHT,
+    paddingVertical: spacing.sm,
   },
   headerRight: {
     flexDirection: 'row',
@@ -156,10 +180,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-  },
-  greeting: {
-    ...typography.caption,
-    marginTop: spacing.xxs,
   },
   profileButton: {
     position: 'relative',

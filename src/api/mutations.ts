@@ -157,6 +157,44 @@ export function useDeclineFriendRequest() {
   });
 }
 
+export function useUpdateAvatar() {
+  return useMutation({
+    mutationFn: async (photoUri: string) => {
+      const formData = new FormData();
+
+      if (Platform.OS === 'web') {
+        const response = await fetch(photoUri);
+        const blob = await response.blob();
+        formData.append('avatar', blob, 'avatar.jpg');
+      } else {
+        formData.append('avatar', {
+          uri: photoUri,
+          type: 'image/jpeg',
+          name: 'avatar.jpg',
+        } as any);
+      }
+
+      const token = await getToken();
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/users/me/avatar`, {
+        method: 'PUT',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Avatar upload failed');
+      }
+
+      return res.json() as Promise<{ avatar: string }>;
+    },
+  });
+}
+
 export function useRemoveFriend() {
   const queryClient = useQueryClient();
   return useMutation({

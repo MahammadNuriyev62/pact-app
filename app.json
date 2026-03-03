@@ -38,6 +38,12 @@
           "photosPermission": "Pact uses your photos to verify habit completion."
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Pact uses the camera to capture photo verification of your habits."
+        }
+      ],
       "expo-web-browser"
     ]
   }

@@ -13,12 +13,13 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { spacing, borderRadius, typography, layout } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDataHelpers } from '@/api/helpers';
 import { useUserSearch, useFriendRequests } from '@/api/queries';
-import { useSendFriendRequest, useAcceptFriendRequest, useDeclineFriendRequest } from '@/api/mutations';
+import { useSendFriendRequest, useAcceptFriendRequest, useDeclineFriendRequest, useUpdateAvatar } from '@/api/mutations';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 
@@ -43,9 +44,11 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark, mode, setMode } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { users: friends, pacts, streaks: streakData, recentActivity } = useDataHelpers();
   const [signingOut, setSigningOut] = React.useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const updateAvatar = useUpdateAvatar();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,11 +85,45 @@ export default function ProfileScreen() {
 
         {/* Profile header */}
         <View style={styles.profileHeader}>
-          <Avatar
-            uri={user?.avatar || ''}
-            name={user?.name || ''}
-            size={80}
-          />
+          <Pressable
+            onPress={async () => {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+              });
+              if (result.canceled || !result.assets[0]) return;
+              setUploadingAvatar(true);
+              try {
+                const { avatar } = await updateAvatar.mutateAsync(result.assets[0].uri);
+                updateUser({ avatar });
+              } catch (e) {
+                console.error('Avatar upload failed:', e);
+                if (Platform.OS === 'web') {
+                  window.alert('Failed to upload avatar. Please try again.');
+                }
+              } finally {
+                setUploadingAvatar(false);
+              }
+            }}
+            style={styles.avatarWrapper}
+          >
+            <Avatar
+              uri={user?.avatar || ''}
+              name={user?.name || ''}
+              size={80}
+            />
+            {uploadingAvatar ? (
+              <View style={[styles.avatarBadge, { backgroundColor: colors.backgroundSecondary }]}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : (
+              <View style={[styles.avatarBadge, { backgroundColor: colors.primary }]}>
+                <Ionicons name="camera" size={14} color="#fff" />
+              </View>
+            )}
+          </Pressable>
           <Text style={[styles.profileName, { color: colors.textPrimary }]}>
             {user?.name}
           </Text>
@@ -343,6 +380,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
+  },
+  avatarWrapper: {
+    position: 'relative',
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: -2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   profileName: {
     ...typography.h2,
