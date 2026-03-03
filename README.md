@@ -174,9 +174,9 @@ The web version is installable as a Progressive Web App. All PWA files are web-o
 - `public/manifest.json` — app manifest (standalone display, theme colors, icons)
 - `public/sw.js` — service worker caching static assets (API calls pass through untouched)
 - `public/icon-{192,512}x{192,512}.png` — PWA icons generated from `assets/logo.png`
-- `app/+html.tsx` — custom HTML template with manifest link, meta tags, and SW registration
+- `scripts/inject-pwa.js` — post-build script that injects manifest link, meta tags, and SW registration into `dist/index.html`
 
-Requires `"output": "static"` in `app.json` web config for `+html.tsx` to be used.
+Build command: `npx expo export --platform web && node scripts/inject-pwa.js`
 
 ## Notes
 
