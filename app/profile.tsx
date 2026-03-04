@@ -22,6 +22,7 @@ import { useUserSearch, useFriendRequests } from '@/api/queries';
 import { useSendFriendRequest, useAcceptFriendRequest, useDeclineFriendRequest, useUpdateAvatar } from '@/api/mutations';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
+import { isPushSupported, isSubscribedToPush, subscribeToPush, unsubscribeFromPush, getPushPermission } from '@/api/pushSubscription';
 
 function useDebouncedValue(value: string, delay = 300) {
   const [debounced, setDebounced] = useState(value);
@@ -60,6 +61,17 @@ export default function ProfileScreen() {
   const sendRequest = useSendFriendRequest();
   const acceptRequest = useAcceptFriendRequest();
   const declineRequest = useDeclineFriendRequest();
+
+  // Push notification state (web only)
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushDenied, setPushDenied] = useState(false);
+  const pushSupported = Platform.OS === 'web' && isPushSupported();
+
+  useEffect(() => {
+    if (!pushSupported) return;
+    isSubscribedToPush().then(setPushEnabled);
+    setPushDenied(getPushPermission() === 'denied');
+  }, []);
 
   // Stats
   const totalPacts = pacts.length;
@@ -184,6 +196,41 @@ export default function ProfileScreen() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
         </Pressable>
+
+        {/* Push notifications toggle (web only) */}
+        {pushSupported && (
+          <Pressable
+            style={[styles.settingsRow, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border, marginTop: spacing.sm }]}
+            onPress={async () => {
+              if (pushDenied) {
+                window.alert('Push notifications are blocked. Please enable them in your browser settings and reload the page.');
+                return;
+              }
+              if (pushEnabled) {
+                await unsubscribeFromPush();
+                setPushEnabled(false);
+              } else {
+                const success = await subscribeToPush();
+                if (success) {
+                  setPushEnabled(true);
+                } else {
+                  setPushDenied(getPushPermission() === 'denied');
+                  if (getPushPermission() === 'denied') {
+                    window.alert('Push notifications were denied. Please enable them in your browser settings.');
+                  }
+                }
+              }
+            }}
+          >
+            <View style={styles.settingsRowLeft}>
+              <Ionicons name="notifications" size={20} color={colors.textSecondary} />
+              <Text style={[styles.settingsLabel, { color: colors.textPrimary }]}>Push Notifications</Text>
+            </View>
+            <Text style={[styles.settingsValue, { color: pushDenied ? colors.error : pushEnabled ? colors.success : colors.textTertiary }]}>
+              {pushDenied ? 'Blocked' : pushEnabled ? 'On' : 'Off'}
+            </Text>
+          </Pressable>
+        )}
 
         {/* Friends section */}
         <View style={styles.section}>
