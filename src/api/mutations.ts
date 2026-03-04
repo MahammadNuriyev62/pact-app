@@ -195,6 +195,18 @@ export function useUpdateAvatar() {
   });
 }
 
+export function useInviteToPact() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ pactId, userIds }: { pactId: string; userIds: string[] }) =>
+      api.post<{ success: boolean; invited: string[] }>(`/pacts/${pactId}/invite`, { userIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.pacts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+    },
+  });
+}
+
 export function useRemoveFriend() {
   const queryClient = useQueryClient();
   return useMutation({

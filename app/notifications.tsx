@@ -49,6 +49,7 @@ export default function NotificationsScreen() {
     pact_invitation:  { icon: 'mail',         color: adaptColor('#7C5CFC', isDark) },
     friend_request:   { icon: 'person-add',   color: adaptColor('#4ECDC4', isDark) },
     friend_accepted:  { icon: 'people',       color: adaptColor('#95E1D3', isDark) },
+    pact_declined:    { icon: 'close-circle', color: adaptColor('#FF6B6B', isDark) },
   }), [isDark]);
 
   const [notificationsList, setNotificationsList] = useState(dataNotifications);

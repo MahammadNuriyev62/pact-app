@@ -21,7 +21,9 @@ import { adaptColor } from '@/utils/colorUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDataHelpers } from '@/api/helpers';
 import { usePactSubmissions } from '@/api/queries';
-import { useLeavePact } from '@/api/mutations';
+import { useLeavePact, useNudge, useInviteToPact } from '@/api/mutations';
+import { useUsers } from '@/api/queries';
+import Avatar from '@/components/ui/Avatar';
 import PactDetailHeader from '@/components/pacts/PactDetailHeader';
 import ParticipantRow from '@/components/pacts/ParticipantRow';
 import CalendarGrid from '@/components/streaks/CalendarGrid';
@@ -38,6 +40,11 @@ export default function PactDetailScreen() {
   const { getPactById, getParticipants, getStreakForUserPact } = useDataHelpers();
   const { data: submissions = [] } = usePactSubmissions(id);
   const leavePactMutation = useLeavePact();
+  const nudgeMutation = useNudge();
+  const inviteMutation = useInviteToPact();
+  const { data: friends = [] } = useUsers();
+
+  const [showInvite, setShowInvite] = useState(false);
 
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   const [givingUp, setGivingUp] = useState(false);
@@ -117,7 +124,7 @@ export default function PactDetailScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Participants</Text>
           {participants.map((u) => (
-            <ParticipantRow key={u.id} user={u} pact={pact} onNudge={() => {}} />
+            <ParticipantRow key={u.id} user={u} pact={pact} onNudge={() => nudgeMutation.mutate({ pactId: pact.id, targetUserId: u.id })} />
           ))}
           {pact.pendingParticipants && pact.pendingParticipants.length > 0 && (
             <View style={styles.pendingSection}>
@@ -135,6 +142,46 @@ export default function PactDetailScreen() {
               ))}
             </View>
           )}
+
+          {/* Invite friends */}
+          {(() => {
+            const allPactUserIds = new Set([
+              ...participants.map(p => p.id),
+              ...(pact.pendingParticipants || []).map((p: any) => p.id),
+            ]);
+            const invitableFriends = friends.filter(f => !allPactUserIds.has(f.id));
+
+            if (invitableFriends.length === 0) return null;
+
+            return (
+              <View style={styles.pendingSection}>
+                <Pressable
+                  onPress={() => setShowInvite(!showInvite)}
+                  style={[styles.inviteToggle, { borderColor: colors.primary }]}
+                >
+                  <Ionicons name={showInvite ? 'chevron-up' : 'person-add'} size={16} color={colors.primary} />
+                  <Text style={[styles.inviteToggleText, { color: colors.primary }]}>
+                    {showInvite ? 'Hide' : 'Invite Friends'}
+                  </Text>
+                </Pressable>
+                {showInvite && invitableFriends.map((friend) => (
+                  <View key={friend.id} style={[styles.pendingRow, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border, opacity: 1 }]}>
+                    <Avatar uri={friend.avatar} name={friend.name} size={36} />
+                    <Text style={[styles.pendingName, { color: colors.textPrimary }]}>{friend.name}</Text>
+                    <Pressable
+                      style={[styles.inviteBtn, { backgroundColor: colors.primary }]}
+                      onPress={async () => {
+                        await inviteMutation.mutateAsync({ pactId: pact.id, userIds: [friend.id] });
+                      }}
+                      disabled={inviteMutation.isPending}
+                    >
+                      <Text style={styles.inviteBtnText}>Invite</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            );
+          })()}
         </View>
 
         {/* My Streak Calendar */}
@@ -342,6 +389,29 @@ const styles = StyleSheet.create({
   },
   pendingStatus: {
     ...typography.caption,
+  },
+  inviteToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    marginBottom: spacing.sm,
+  },
+  inviteToggleText: {
+    ...typography.bodyBold,
+  },
+  inviteBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+  },
+  inviteBtnText: {
+    ...typography.captionBold,
+    color: '#fff',
   },
   giveUpSection: {
     paddingHorizontal: spacing.xl,
