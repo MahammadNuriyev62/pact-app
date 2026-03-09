@@ -82,9 +82,9 @@ export default function WeeklyProgressBar({ progress, color, compact = false, ce
           </Text>
         )}
       </View>
-      {isFirstWeek && !metTarget && (
+      {isFirstWeek && (
         <Text style={[styles.hint, { color: colors.textTertiary }]}>
-          Started mid-week — only {adjustedTarget} needed this week
+          Free pass week — streak starts next week
         </Text>
       )}
     </View>
