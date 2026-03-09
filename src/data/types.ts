@@ -66,6 +66,19 @@ export interface FreezeInfo {
   nextFreezeIn: number;
 }
 
+export interface WeeklyProgress {
+  /** Days submitted this week by the current user */
+  completed: number;
+  /** Target days per week */
+  target: number;
+  /** Adjusted target for first week (pro-rated) */
+  adjustedTarget: number;
+  /** Whether this is the pact's first week */
+  isFirstWeek: boolean;
+  /** Days remaining in the current week (including today) */
+  daysLeft: number;
+}
+
 export interface StreakData {
   pactId: string;
   /** Unified streak: consecutive days/weeks where ALL participants completed. */
@@ -81,6 +94,8 @@ export interface StreakData {
   todayStatus: { completed: number; total: number };
   /** Freeze info for the current user (daily pacts only). */
   freezeInfo: FreezeInfo | null;
+  /** Weekly progress for the current user (weekly pacts only). */
+  weeklyProgress?: WeeklyProgress;
 }
 
 export interface Notification {

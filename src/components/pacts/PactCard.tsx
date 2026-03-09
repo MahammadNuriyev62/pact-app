@@ -14,6 +14,7 @@ import AvatarGroup from '@/components/ui/AvatarGroup';
 import Avatar from '@/components/ui/Avatar';
 import StreakFlame from '@/components/streaks/StreakFlame';
 import TodayProgress from '@/components/streaks/TodayProgress';
+import WeeklyProgressBar from '@/components/streaks/WeeklyProgressBar';
 import { adaptColor } from '@/utils/colorUtils';
 
 interface PactCardProps {
@@ -87,14 +88,20 @@ export default function PactCard({ pact, onPress }: PactCardProps) {
               {pactStreak?.currentStreak || 0}
             </Text>
           </View>
-          {pactStreak?.todayStatus && (
+          {pactStreak?.weeklyProgress ? (
+            <WeeklyProgressBar
+              progress={pactStreak.weeklyProgress}
+              color={pactColor}
+              compact
+            />
+          ) : pactStreak?.todayStatus ? (
             <TodayProgress
               completed={pactStreak.todayStatus.completed}
               total={pactStreak.todayStatus.total}
               color={pactColor}
               compact
             />
-          )}
+          ) : null}
           <AvatarGroup
             users={participants.map((p) => ({ avatar: p.avatar, name: p.name }))}
             max={3}

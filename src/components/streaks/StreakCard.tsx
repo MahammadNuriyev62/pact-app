@@ -11,6 +11,7 @@ import StreakCounter from './StreakCounter';
 import MilestoneBadge from './MilestoneBadge';
 import CalendarGrid from './CalendarGrid';
 import TodayProgress from './TodayProgress';
+import WeeklyProgressBar from './WeeklyProgressBar';
 import { adaptColor } from '@/utils/colorUtils';
 
 interface StreakCardProps {
@@ -44,13 +45,20 @@ export default function StreakCard({ pact }: StreakCardProps) {
         )}
       </View>
 
-      {/* Today's completion progress */}
+      {/* Progress: weekly or daily */}
       <View style={[styles.todayRow, { borderTopColor: colors.border }]}>
-        <TodayProgress
-          completed={streak.todayStatus.completed}
-          total={streak.todayStatus.total}
-          color={pactColor}
-        />
+        {streak.weeklyProgress ? (
+          <WeeklyProgressBar
+            progress={streak.weeklyProgress}
+            color={pactColor}
+          />
+        ) : (
+          <TodayProgress
+            completed={streak.todayStatus.completed}
+            total={streak.todayStatus.total}
+            color={pactColor}
+          />
+        )}
       </View>
 
       <CalendarGrid completedDates={streak.completedDates} freezeDates={streak.freezeInfo?.freezeDates} color={pactColor} />

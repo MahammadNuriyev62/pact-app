@@ -32,6 +32,7 @@ import CalendarGrid from '@/components/streaks/CalendarGrid';
 import StreakFlame from '@/components/streaks/StreakFlame';
 import MilestoneBadge from '@/components/streaks/MilestoneBadge';
 import TodayProgress from '@/components/streaks/TodayProgress';
+import WeeklyProgressBar from '@/components/streaks/WeeklyProgressBar';
 import ReactionBar from '@/components/shared/ReactionBar';
 import StreakFreezeInfo from '@/components/streaks/StreakFreezeInfo';
 import IconSelector from '@/components/create/IconSelector';
@@ -210,7 +211,15 @@ export default function PactDetailScreen() {
               <MilestoneBadge streak={pactStreak.currentStreak} color={pactColor} />
             </View>
           )}
-          {pactStreak?.todayStatus && (
+          {pactStreak?.weeklyProgress ? (
+            <View style={styles.todayProgressRow}>
+              <WeeklyProgressBar
+                progress={pactStreak.weeklyProgress}
+                color={pactColor}
+                centered
+              />
+            </View>
+          ) : pactStreak?.todayStatus ? (
             <View style={styles.todayProgressRow}>
               <TodayProgress
                 completed={pactStreak.todayStatus.completed}
@@ -219,7 +228,7 @@ export default function PactDetailScreen() {
                 centered
               />
             </View>
-          )}
+          ) : null}
         </PactDetailHeader>
 
         {/* Participants */}
