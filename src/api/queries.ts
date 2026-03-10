@@ -2,7 +2,7 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { api } from './client';
 import { queryKeys } from './queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Pact, Submission, StreakData, Notification, ChatMessage } from '@/data/types';
+import { User, Pact, Submission, StreakData, Notification, ChatMessage, UserProfile } from '@/data/types';
 
 export interface PactWithDetails extends Pact {
   participantDetails?: User[];
@@ -204,6 +204,15 @@ export function useFriendRequests() {
     queryKey: queryKeys.users.friendRequests,
     queryFn: () => api.get<FriendRequest[]>('/users/friend-requests'),
     enabled: !!token,
+  });
+}
+
+export function useUserProfile(userId: string) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: queryKeys.users.profile(userId),
+    queryFn: () => api.get<UserProfile>(`/users/${userId}/profile`),
+    enabled: !!token && !!userId,
   });
 }
 

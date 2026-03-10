@@ -254,6 +254,24 @@ export function useUpdatePact() {
   });
 }
 
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name?: string; username?: string; bio?: string }) =>
+      api.put<any>('/auth/profile', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pacts.all });
+    },
+  });
+}
+
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: () => api.del<{ success: boolean }>('/auth/account'),
+  });
+}
+
 export function useRemoveFriend() {
   const queryClient = useQueryClient();
   return useMutation({

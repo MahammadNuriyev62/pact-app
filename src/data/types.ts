@@ -3,7 +3,23 @@ export interface User {
   name: string;
   username: string;
   avatar: string;
+  bio?: string;
   isCurrentUser?: boolean;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  username: string;
+  avatar: string;
+  bio: string;
+  stats: {
+    totalPacts: number;
+    totalSubmissions: number;
+  };
+  sharedPacts: { id: string; title: string; icon: string; iconFamily: string; color: string; frequency: string }[];
+  activityMap: Record<string, number>;
+  friendshipStatus: 'self' | 'accepted' | 'pending' | 'declined' | 'none';
 }
 
 export interface Pact {
